@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 5.1%;          /* #0D0D0D */
+    --foreground: 0 0% 98%;           /* #FAFAFA */
+
+    --card: 0 0% 10.2%;               /* #1A1A1A */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 10.2%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 27 100% 50%;           /* #FF7200 */
+    --primary-foreground: 0 0% 5.1%;
+
+    --secondary: 0 0% 16.5%;          /* #2A2A2A */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 16.5%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 27 100% 50%;
+    --accent-foreground: 0 0% 5.1%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 16.5%;             /* #2A2A2A */
+    --input: 0 0% 16.5%;
+    --ring: 27 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --orange: 27 100% 50%;
+    --orange-dim: 27 100% 40%;
+    --orange-glow: 27 100% 60%;
+    --surface: 0 0% 10.2%;
+    --surface-hover: 0 0% 13%;
+    --divider: 0 0% 16.5%;
+
+    --chart-orange: hsl(27 100% 50%);
+    --chart-orange-dim: hsl(27 80% 35%);
+    --chart-fill: hsl(27 100% 50% / 0.12);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .card-glow {
+    box-shadow: 0 0 0 1px hsl(var(--border)), 0 4px 24px hsl(0 0% 0% / 0.4);
+  }
+
+  .orange-glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.25);
+  }
+
+  .metric-number {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--orange-glow)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
