@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import ReelsSection from "@/components/ReelsSection";
+import ContentSection from "@/components/ReelsSection";
 import { Session } from "@supabase/supabase-js";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -252,7 +252,7 @@ export default function DashboardPage({ session }: { session: Session }) {
           />
           <NavItem
             icon={<Film className="w-full h-full" />}
-            label="Reels"
+            label="Contenido"
             active={activeNav === "reels"}
             onClick={() => setActiveNav("reels")}
           />
@@ -319,7 +319,7 @@ export default function DashboardPage({ session }: { session: Session }) {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-                {activeNav === "dashboard" ? (clientName || "Dashboard") : "Reels"}
+                {activeNav === "dashboard" ? (clientName || "Dashboard") : "Contenido"}
               </h1>
               {activeNav === "dashboard" && dateRange && (
                 <p className="text-xs text-gray-400 mt-0.5">{dateRange}</p>
@@ -428,10 +428,10 @@ export default function DashboardPage({ session }: { session: Session }) {
             )
           )}
 
-          {/* ── REELS TAB ──────────────────────────────────────────────────────── */}
+          {/* ── CONTENIDO TAB ─────────────────────────────────────────────────── */}
           {activeNav === "reels" && (
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <ReelsSection />
+              <ContentSection />
             </div>
           )}
 
