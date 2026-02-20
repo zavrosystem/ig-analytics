@@ -384,7 +384,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                 </div>
 
                 {/* Bottom row */}
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-5 gap-4 mb-10">
                   <div className="col-span-3 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                     <div className="mb-4">
                       <h2 className="text-sm font-bold text-gray-800">Alcance vs Impresiones</h2>
