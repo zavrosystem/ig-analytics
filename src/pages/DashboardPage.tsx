@@ -313,7 +313,7 @@ export default function DashboardPage({ session }: { session: Session }) {
 
       {/* ── Main ──────────────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto">
-        <div className="px-6 py-6 pb-10 space-y-5 h-full">
+        <div className="px-6 py-6 pb-10 space-y-5">
 
           {/* Page header */}
           <div className="flex items-start justify-between">
