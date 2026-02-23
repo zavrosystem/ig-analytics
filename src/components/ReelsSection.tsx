@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Play, Heart, Bookmark, Share2, Clock, Eye, ChevronRight, CornerUpLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Play, Heart, Bookmark, Share2, Clock, Eye, ChevronRight, CornerUpLeft, Image, LayoutGrid } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
@@ -9,8 +9,27 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
+interface Post {
+  id: string;
+  post_id: string;
+  media_type: string;
+  permalink: string | null;
+  caption: string | null;
+  thumbnail_url: string | null;
+  posted_at: string | null;
+  like_count: number;
+  comments_count: number;
+  saved: number;
+  shares: number;
+  reach: number;
+  impressions: number;
+  video_views: number;
+  engagement_rate: number | null;
+}
+
 interface Reel {
   id: string;
   caption: string;
@@ -68,30 +87,6 @@ const MOCK_REELS: Reel[] = [
     like_count: 2890, comments_count: 210, shares: 1420, saved: 2100, reach: 32800,
     gradient: "linear-gradient(160deg, #F59E0B 0%, #92400E 100%)",
   },
-  {
-    id: "r4",
-    caption: "Día en mi vida como community manager (lo que nadie muestra)",
-    posted_at: "2026-01-07",
-    plays: 12600, video_views: 9800, avg_watch_time_ms: 22000, duration_ms: 45000,
-    like_count: 876, comments_count: 92, shares: 234, saved: 567, reach: 11200,
-    gradient: "linear-gradient(160deg, #57534E 0%, #1C1917 100%)",
-  },
-  {
-    id: "r5",
-    caption: "3 herramientas que uso para editar reels desde el celular",
-    posted_at: "2025-12-31",
-    plays: 18900, video_views: 16400, avg_watch_time_ms: 13400, duration_ms: 25000,
-    like_count: 1560, comments_count: 143, shares: 678, saved: 1340, reach: 17600,
-    gradient: "linear-gradient(160deg, #EA580C 0%, #7C2D12 100%)",
-  },
-  {
-    id: "r6",
-    caption: "Por qué tus reels no viralizan (el algoritmo explicado fácil)",
-    posted_at: "2025-12-24",
-    plays: 4200, video_views: 3100, avg_watch_time_ms: 4800, duration_ms: 20000,
-    like_count: 189, comments_count: 22, shares: 45, saved: 134, reach: 3800,
-    gradient: "linear-gradient(160deg, #52525B 0%, #09090B 100%)",
-  },
 ];
 
 // ── Mock Stories ───────────────────────────────────────────────────────────────
@@ -119,30 +114,6 @@ const MOCK_STORIES: Story[] = [
     impressions: 5100, reach: 4800, replies: 234, exits: 306,
     taps_forward: 198, taps_back: 412, shares: 156, duration_ms: 8000,
     gradient: "linear-gradient(160deg, #F59E0B 0%, #92400E 100%)",
-  },
-  {
-    id: "s4",
-    caption: "Resultados del mes de enero para nuestros clientes",
-    posted_at: "2026-02-10",
-    impressions: 2900, reach: 2700, replies: 18, exits: 870,
-    taps_forward: 640, taps_back: 45, shares: 12, duration_ms: 12000,
-    gradient: "linear-gradient(160deg, #57534E 0%, #1C1917 100%)",
-  },
-  {
-    id: "s5",
-    caption: "3 datos que todo cliente debe conocer de su cuenta",
-    posted_at: "2026-02-07",
-    impressions: 6300, reach: 5900, replies: 89, exits: 504,
-    taps_forward: 378, taps_back: 290, shares: 201, duration_ms: 10000,
-    gradient: "linear-gradient(160deg, #EA580C 0%, #7C2D12 100%)",
-  },
-  {
-    id: "s6",
-    caption: "Novedad: nuevo servicio de reportes mensuales",
-    posted_at: "2026-02-04",
-    impressions: 1800, reach: 1650, replies: 9, exits: 720,
-    taps_forward: 810, taps_back: 22, shares: 8, duration_ms: 6000,
-    gradient: "linear-gradient(160deg, #52525B 0%, #09090B 100%)",
   },
 ];
 
@@ -230,6 +201,114 @@ function StatGrid({ stats }: { stats: { label: string; value: string }[] }) {
   );
 }
 
+// ── POSTS ──────────────────────────────────────────────────────────────────────
+const GRADIENTS = [
+  "linear-gradient(160deg, #FF7200 0%, #7A2E00 100%)",
+  "linear-gradient(160deg, #B45309 0%, #3B1A04 100%)",
+  "linear-gradient(160deg, #F59E0B 0%, #92400E 100%)",
+  "linear-gradient(160deg, #57534E 0%, #1C1917 100%)",
+  "linear-gradient(160deg, #EA580C 0%, #7C2D12 100%)",
+  "linear-gradient(160deg, #52525B 0%, #09090B 100%)",
+];
+
+function PostCard({ post, index, onClick }: { post: Post; index: number; onClick: () => void }) {
+  const engRate = post.engagement_rate ?? 0;
+  const color   = rateColor(engRate);
+  const gradient = GRADIENTS[index % GRADIENTS.length];
+  const isCarousel = post.media_type === "CAROUSEL_ALBUM";
+
+  return (
+    <button
+      onClick={onClick}
+      className="text-left group bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-[#FF7200]/40 hover:shadow-md hover:scale-[1.02] transition-all duration-200"
+    >
+      <div className="relative h-36 w-full flex items-center justify-center overflow-hidden" style={{ background: gradient }}>
+        {post.thumbnail_url ? (
+          <img src={post.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
+            {isCarousel
+              ? <LayoutGrid className="w-4 h-4 text-white" />
+              : <Image className="w-4 h-4 text-white" />
+            }
+          </div>
+        )}
+        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold"
+          style={{ backgroundColor: color + "33", color, border: `1px solid ${color}55` }}>
+          {engRate.toFixed(1)}%
+        </div>
+        {isCarousel && (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[10px] font-medium">
+            Carrusel
+          </div>
+        )}
+        <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white/90 text-xs font-medium drop-shadow">
+          <Heart className="w-3 h-3 fill-white/90" />{fmtN(post.like_count)}
+        </div>
+      </div>
+      <div className="p-3 space-y-2">
+        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
+          {post.caption || <span className="text-gray-300 italic">Sin caption</span>}
+        </p>
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{fmtN(post.like_count)}</span>
+          <span className="flex items-center gap-1"><Bookmark className="w-3 h-3" />{fmtN(post.saved)}</span>
+          <span className="flex items-center gap-1"><Share2 className="w-3 h-3" />{fmtN(post.shares)}</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function PostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
+  const engRate  = post.engagement_rate ?? 0;
+  const gradient = GRADIENTS[index % GRADIENTS.length];
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-gray-900 text-base font-semibold">
+            {post.media_type === "CAROUSEL_ALBUM" ? "Detalle del Carrusel" : "Detalle del Post"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pb-2">
+          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: gradient }}>
+            <p>{post.caption || <span className="italic opacity-60">Sin caption</span>}</p>
+            {post.posted_at && (
+              <p className="text-white/50 text-xs">
+                {format(new Date(post.posted_at), "d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            )}
+          </div>
+
+          <RateBar rate={Math.round(engRate)} label="Engagement Rate" />
+
+          {post.permalink && (
+            <a
+              href={post.permalink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[#FF7200] hover:underline flex items-center gap-1"
+            >
+              Ver en Instagram →
+            </a>
+          )}
+
+          <StatGrid stats={[
+            { label: "Alcance",       value: fmtN(post.reach) },
+            { label: "Engagement",    value: `${engRate.toFixed(1)}%` },
+            { label: "Likes",         value: fmtN(post.like_count) },
+            { label: "Comentarios",   value: fmtN(post.comments_count) },
+            { label: "Guardados",     value: fmtN(post.saved) },
+            { label: "Compartidos",   value: fmtN(post.shares) },
+          ]} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── REELS ──────────────────────────────────────────────────────────────────────
 function getHookRate(r: Reel) {
   return Math.round((r.avg_watch_time_ms / r.duration_ms) * 100);
@@ -291,7 +370,6 @@ function ReelDetail({ reel, onClose }: { reel: Reel; onClose: () => void }) {
             {fmtMs(reel.avg_watch_time_ms)} promedio · {fmtMs(reel.duration_ms)} duración
           </div>
 
-          {/* Retention curve */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
             <p className="text-[10px] text-gray-400">Simulada a partir del tiempo promedio de reproducción</p>
@@ -338,7 +416,6 @@ function getCompletionRate(s: Story) {
 function storyDropoffCurve(exits: number, impressions: number, durMs: number) {
   const completionRate = 1 - exits / impressions;
   const dur = durMs / 1000;
-  // Stories drop faster at start — use square root decay towards completion rate
   const steps = 20;
   return Array.from({ length: steps + 1 }, (_, i) => {
     const t = (i / steps) * dur;
@@ -356,22 +433,17 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
       onClick={onClick}
       className="text-left group bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-[#FF7200]/40 hover:shadow-md hover:scale-[1.02] transition-all duration-200"
     >
-      {/* Thumbnail — portrait feel */}
       <div className="relative h-36 w-full flex items-center justify-center" style={{ background: story.gradient }}>
-        {/* Story ring */}
         <div className="w-10 h-10 rounded-full border-2 border-white/60 flex items-center justify-center">
           <Eye className="w-4 h-4 text-white" />
         </div>
-        {/* Completion badge */}
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold"
           style={{ backgroundColor: color + "33", color, border: `1px solid ${color}55` }}>
           {rate}%
         </div>
-        {/* Impressions */}
         <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white/90 text-xs font-medium drop-shadow">
           <Eye className="w-3 h-3" />{fmtN(story.impressions)}
         </div>
-        {/* Duration badge */}
         <div className="absolute bottom-2 right-2 text-white/70 text-[10px] font-medium drop-shadow">
           {fmtMs(story.duration_ms)}
         </div>
@@ -412,7 +484,6 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
             Duración: {fmtMs(story.duration_ms)} · {fmtN(story.exits)} salidas de {fmtN(story.impressions)} impresiones
           </div>
 
-          {/* Dropoff curve */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de abandono estimada</p>
             <p className="text-[10px] text-gray-400">Simulada a partir del ratio de salidas</p>
@@ -452,33 +523,102 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
 }
 
 // ── Main Export ────────────────────────────────────────────────────────────────
-export default function ContentSection() {
+export default function ContentSection({ clientId }: { clientId: string | null }) {
+  const [posts,         setPosts]         = useState<Post[]>([]);
+  const [loadingPosts,  setLoadingPosts]  = useState(true);
+  const [selectedPost,  setSelectedPost]  = useState<{ post: Post; index: number } | null>(null);
   const [selectedReel,  setSelectedReel]  = useState<Reel  | null>(null);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+
+  useEffect(() => {
+    if (!clientId) { setLoadingPosts(false); return; }
+    supabase
+      .from("posts")
+      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, engagement_rate")
+      .eq("client_id", clientId)
+      .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
+      .order("posted_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        setPosts((data as Post[]) ?? []);
+        setLoadingPosts(false);
+      });
+  }, [clientId]);
+
+  const imagePosts = posts.filter(p => p.media_type === "IMAGE" || p.media_type === "CAROUSEL_ALBUM");
+  const videoPosts = posts.filter(p => p.media_type === "VIDEO" || p.media_type === "REELS");
 
   return (
     <div className="space-y-8">
 
-      {/* Reels */}
+      {/* Posts reales */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-bold text-gray-800">Reels</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Hook rate = tiempo promedio / duración</p>
+            <h2 className="text-sm font-bold text-gray-800">Posts</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Engagement rate = (likes + comentarios + guardados + compartidos) / alcance</p>
           </div>
-          <span className="text-xs text-gray-300">Datos de ejemplo</span>
+          {loadingPosts
+            ? <span className="text-xs text-gray-300">Cargando...</span>
+            : <span className="text-xs text-gray-400">{imagePosts.length} posts</span>
+          }
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-          {MOCK_REELS.map((reel) => (
-            <ReelCard key={reel.id} reel={reel} onClick={() => setSelectedReel(reel)} />
-          ))}
-        </div>
+        {!loadingPosts && imagePosts.length === 0 ? (
+          <div className="text-center py-10 text-gray-300 text-sm">
+            No hay posts registrados todavía. El pipeline nocturno los cargará pronto.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {imagePosts.map((post, i) => (
+              <PostCard key={post.id} post={post} index={i} onClick={() => setSelectedPost({ post, index: i })} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Videos/Reels reales (si los hay), si no mock */}
+      {videoPosts.length > 0 && (
+        <>
+          <div className="border-t border-gray-100" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-gray-800">Reels / Videos</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Engagement rate real desde Instagram</p>
+              </div>
+              <span className="text-xs text-gray-400">{videoPosts.length} videos</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {videoPosts.map((post, i) => (
+                <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedPost({ post, index: i + 3 })} />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Divider */}
       <div className="border-t border-gray-100" />
 
-      {/* Stories */}
+      {/* Reels mock (si no hay videos reales) */}
+      {videoPosts.length === 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">Reels</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Hook rate = tiempo promedio / duración</p>
+            </div>
+            <span className="text-xs text-gray-300">Datos de ejemplo</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {MOCK_REELS.map((reel) => (
+              <ReelCard key={reel.id} reel={reel} onClick={() => setSelectedReel(reel)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Stories mock */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -494,6 +634,7 @@ export default function ContentSection() {
         </div>
       </div>
 
+      {selectedPost  && <PostDetail  post={selectedPost.post} index={selectedPost.index} onClose={() => setSelectedPost(null)} />}
       {selectedReel  && <ReelDetail  reel={selectedReel}   onClose={() => setSelectedReel(null)}  />}
       {selectedStory && <StoryDetail story={selectedStory} onClose={() => setSelectedStory(null)} />}
     </div>
