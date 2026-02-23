@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import ContentSection from "@/components/ReelsSection";
 import MessagesSection from "@/components/MessagesSection";
+import AdsSection from "@/components/AdsSection";
 import { Session } from "@supabase/supabase-js";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -12,7 +13,7 @@ import {
 } from "recharts";
 import {
   Users, Eye, BarChart2, UserCircle, MousePointerClick,
-  LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, MessageCircle,
+  LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, MessageCircle, Megaphone,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -147,7 +148,7 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [allClients, setAllClients]             = useState<ClientInfo[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading]                   = useState(true);
-  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "messages">("dashboard");
+  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages">("dashboard");
 
   useEffect(() => {
     const load = async () => {
@@ -253,9 +254,15 @@ export default function DashboardPage({ session }: { session: Session }) {
           />
           <NavItem
             icon={<Film className="w-full h-full" />}
-            label="Contenido"
+            label="Orgánico"
             active={activeNav === "reels"}
             onClick={() => setActiveNav("reels")}
+          />
+          <NavItem
+            icon={<Megaphone className="w-full h-full" />}
+            label="Pagado"
+            active={activeNav === "ads"}
+            onClick={() => setActiveNav("ads")}
           />
           <NavItem
             icon={<MessageCircle className="w-full h-full" />}
@@ -327,7 +334,8 @@ export default function DashboardPage({ session }: { session: Session }) {
             <div>
               <h1 className="text-xl font-bold text-gray-900 tracking-tight">
                 {activeNav === "dashboard" ? (clientName || "Dashboard")
-                  : activeNav === "reels" ? "Contenido"
+                  : activeNav === "reels" ? "Contenido orgánico"
+                  : activeNav === "ads" ? "Contenido pagado"
                   : "Mensajes"}
               </h1>
               {activeNav === "dashboard" && dateRange && (
@@ -442,6 +450,11 @@ export default function DashboardPage({ session }: { session: Session }) {
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
               <ContentSection clientId={selectedClientId} />
             </div>
+          )}
+
+          {/* ── PAGADO TAB ────────────────────────────────────────────────────── */}
+          {activeNav === "ads" && (
+            <AdsSection clientId={selectedClientId} />
           )}
 
           {/* ── MENSAJES TAB ──────────────────────────────────────────────────── */}
