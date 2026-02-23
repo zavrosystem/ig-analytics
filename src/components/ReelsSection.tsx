@@ -576,62 +576,33 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         )}
       </div>
 
-      {/* Videos/Reels reales (si los hay), si no mock */}
-      {videoPosts.length > 0 && (
-        <>
-          <div className="border-t border-gray-100" />
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-bold text-gray-800">Reels / Videos</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Engagement rate real desde Instagram</p>
-              </div>
-              <span className="text-xs text-gray-400">{videoPosts.length} videos</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {videoPosts.map((post, i) => (
-                <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedPost({ post, index: i + 3 })} />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Divider */}
       <div className="border-t border-gray-100" />
 
-      {/* Reels mock (si no hay videos reales) */}
-      {videoPosts.length === 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800">Reels</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Hook rate = tiempo promedio / duración</p>
-            </div>
-            <span className="text-xs text-gray-300">Datos de ejemplo</span>
-          </div>
+      {/* Reels */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-sm font-bold text-gray-800">Reels</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Hook rate = tiempo promedio / duración</p>
+        </div>
+        {videoPosts.length === 0 ? (
+          <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {MOCK_REELS.map((reel) => (
-              <ReelCard key={reel.id} reel={reel} onClick={() => setSelectedReel(reel)} />
+            {videoPosts.map((post, i) => (
+              <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedPost({ post, index: i + 3 })} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Stories mock */}
+      {/* Stories */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-gray-800">Stories</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Completion rate = 1 − (salidas / impresiones)</p>
-          </div>
-          <span className="text-xs text-gray-300">Datos de ejemplo</span>
+        <div>
+          <h2 className="text-sm font-bold text-gray-800">Stories</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Completion rate = 1 − (salidas / impresiones)</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-          {MOCK_STORIES.map((story) => (
-            <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
-          ))}
-        </div>
+        <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
       </div>
 
       {selectedPost  && <PostDetail  post={selectedPost.post} index={selectedPost.index} onClose={() => setSelectedPost(null)} />}
