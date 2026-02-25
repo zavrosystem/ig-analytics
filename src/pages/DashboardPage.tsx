@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import {
   Users, Eye, BarChart2, UserCircle, MousePointerClick,
-  LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, MessageCircle, Megaphone,
+  LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, Megaphone,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -264,12 +264,13 @@ export default function DashboardPage({ session }: { session: Session }) {
             active={activeNav === "ads"}
             onClick={() => setActiveNav("ads")}
           />
+          {/* Mensajes — oculto hasta que Meta apruebe instagram_manage_messages
           <NavItem
             icon={<MessageCircle className="w-full h-full" />}
             label="Mensajes"
             active={activeNav === "messages"}
             onClick={() => setActiveNav("messages")}
-          />
+          /> */}
         </nav>
 
         {/* Filters */}
