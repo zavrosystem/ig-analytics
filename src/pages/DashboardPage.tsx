@@ -465,18 +465,21 @@ export default function DashboardPage({ session }: { session: Session }) {
             ) : (
               <div className="space-y-5">
 
-                {/* KPI grid — 4 cols, 2 rows */}
-                <div className="grid grid-cols-4 gap-4">
-                  {/* Row 1 */}
-                  <div className="col-span-2">
-                    <KpiCard
-                      label="Seguidores totales"
-                      value={latest?.followers_count ?? 0}
-                      prevValue={prevLatest?.followers_count ?? 0}
-                      icon={<Users className="w-4 h-4" />}
-                      hero
-                    />
-                  </div>
+                {/* KPI grid — 3 cols × 2 rows, todas iguales */}
+                <div className="grid grid-cols-3 gap-4">
+                  <KpiCard
+                    label="Seguidores totales"
+                    value={latest?.followers_count ?? 0}
+                    prevValue={prevLatest?.followers_count ?? 0}
+                    icon={<Users className="w-4 h-4" />}
+                    hero
+                  />
+                  <KpiCard
+                    label="Nuevos seguidores"
+                    value={newFolls}
+                    prevValue={prevNewF}
+                    icon={<TrendingUp className="w-4 h-4" />}
+                  />
                   <KpiCard
                     label="Alcance total"
                     value={totalReach}
@@ -489,15 +492,6 @@ export default function DashboardPage({ session }: { session: Session }) {
                     prevValue={prevViews}
                     icon={<UserCircle className="w-4 h-4" />}
                   />
-                  {/* Row 2 */}
-                  <div className="col-span-2">
-                    <KpiCard
-                      label="Nuevos seguidores"
-                      value={newFolls}
-                      prevValue={prevNewF}
-                      icon={<TrendingUp className="w-4 h-4" />}
-                    />
-                  </div>
                   <KpiCard
                     label="Follower Conversion Rate"
                     value={fcr}
