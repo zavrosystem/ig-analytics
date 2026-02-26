@@ -8,11 +8,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AreaChart, Area, LineChart, Line,
+  AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import {
-  Users, Eye, BarChart2, UserCircle, MousePointerClick,
+  Users, Eye, BarChart2, UserCircle,
   LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, Megaphone,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
@@ -28,6 +28,11 @@ interface MetricRow {
   profile_views: number;
   website_clicks: number;
   follower_delta: number;
+}
+interface PostRow {
+  engagement_rate: number;
+  posted_at: string;
+  caption: string | null;
 }
 interface ClientInfo { id: string; name: string; }
 
@@ -74,10 +79,10 @@ function NavItem({
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 function KpiCard({
-  label, value, prevValue, icon, hero = false,
+  label, value, prevValue, icon, hero = false, displayValue,
 }: {
   label: string; value: number; prevValue: number;
-  icon: React.ReactNode; hero?: boolean;
+  icon: React.ReactNode; hero?: boolean; displayValue?: string;
 }) {
   const t = calcTrend(value, prevValue);
   return (
@@ -108,7 +113,7 @@ function KpiCard({
           "text-[2.1rem] font-bold tracking-tight leading-none",
           hero ? "text-white" : "text-gray-900",
         )}>
-          {fmtNum(value)}
+          {displayValue ?? fmtNum(value)}
         </div>
         {t && (
           <div className={cn(
@@ -124,7 +129,7 @@ function KpiCard({
   );
 }
 
-// ── Chart Tooltip ─────────────────────────────────────────────────────────────
+// ── Chart Tooltips ─────────────────────────────────────────────────────────────
 const ChartTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -139,10 +144,25 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+const EngTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg text-xs">
+      <p className="text-gray-400 mb-2">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} style={{ color: p.color }} className="font-semibold">
+          {p.name}: {p.value.toFixed(2)}%
+        </p>
+      ))}
+    </div>
+  );
+};
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage({ session }: { session: Session }) {
   const [period, setPeriod]                     = useState("30");
   const [metrics, setMetrics]                   = useState<MetricRow[]>([]);
+  const [posts, setPosts]                       = useState<PostRow[]>([]);
   const [clientName, setClientName]             = useState("");
   const [isAdmin, setIsAdmin]                   = useState(false);
   const [allClients, setAllClients]             = useState<ClientInfo[]>([]);
@@ -183,7 +203,21 @@ export default function DashboardPage({ session }: { session: Session }) {
     setMetrics(data ?? []);
   }, [selectedClientId, period]);
 
+  const loadPosts = useCallback(async () => {
+    if (!selectedClientId) return;
+    const since = format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
+    const { data } = await supabase
+      .from("posts")
+      .select("engagement_rate, posted_at, caption")
+      .eq("client_id", selectedClientId)
+      .gte("posted_at", since + "T00:00:00")
+      .order("posted_at", { ascending: true })
+      .limit(30);
+    setPosts(data ?? []);
+  }, [selectedClientId, period]);
+
   useEffect(() => { loadMetrics(); }, [loadMetrics]);
+  useEffect(() => { loadPosts(); }, [loadPosts]);
 
   const handleClientChange = (id: string) => {
     setSelectedClientId(id);
@@ -196,25 +230,34 @@ export default function DashboardPage({ session }: { session: Session }) {
   const latest      = metrics[metrics.length - 1];
   const prevLatest  = prevHalf[prevHalf.length - 1];
   const totalReach  = metrics.reduce((s, r) => s + r.reach, 0);
-  const totalImpr   = metrics.reduce((s, r) => s + r.impressions, 0);
   const totalViews  = metrics.reduce((s, r) => s + r.profile_views, 0);
-  const totalClicks = metrics.reduce((s, r) => s + r.website_clicks, 0);
   const newFolls    = metrics.reduce((s, r) => s + r.follower_delta, 0);
   const prevReach   = prevHalf.reduce((s, r) => s + r.reach, 0);
-  const prevImpr    = prevHalf.reduce((s, r) => s + r.impressions, 0);
   const prevViews   = prevHalf.reduce((s, r) => s + r.profile_views, 0);
-  const prevClicks  = prevHalf.reduce((s, r) => s + r.website_clicks, 0);
   const prevNewF    = prevHalf.reduce((s, r) => s + r.follower_delta, 0);
+
+  const fcr     = totalReach > 0 ? newFolls / totalReach * 100 : 0;
+  const prevFcr = prevReach  > 0 ? prevNewF / prevReach  * 100 : 0;
+
+  const midPost    = Math.floor(posts.length / 2);
+  const prevPosts  = posts.slice(0, midPost);
+  const avgER      = posts.length     ? posts.reduce((s, p) => s + (p.engagement_rate ?? 0), 0) / posts.length     : 0;
+  const prevAvgER  = prevPosts.length ? prevPosts.reduce((s, p) => s + (p.engagement_rate ?? 0), 0) / prevPosts.length : 0;
 
   const dateRange = metrics.length
     ? `${format(new Date(metrics[0].date + "T12:00:00"), "d MMM", { locale: es })} – ${format(new Date(latest.date + "T12:00:00"), "d MMM, yyyy", { locale: es })}`
     : "";
 
   const chartData = metrics.map((r) => ({
-    date:        format(new Date(r.date + "T12:00:00"), "dd MMM", { locale: es }),
-    Seguidores:  r.followers_count,
-    Alcance:     r.reach,
-    Impresiones: r.impressions,
+    date:              format(new Date(r.date + "T12:00:00"), "dd MMM", { locale: es }),
+    Seguidores:        r.followers_count,
+    Alcance:           r.reach,
+    "Nuevos seguidores": r.follower_delta,
+  }));
+
+  const engChartData = posts.map((p) => ({
+    label: format(new Date(p.posted_at), "dd MMM", { locale: es }),
+    "Eng. Rate": parseFloat((p.engagement_rate ?? 0).toFixed(2)),
   }));
 
   if (loading) {
@@ -264,13 +307,6 @@ export default function DashboardPage({ session }: { session: Session }) {
             active={activeNav === "ads"}
             onClick={() => setActiveNav("ads")}
           />
-          {/* Mensajes — oculto hasta que Meta apruebe instagram_manage_messages
-          <NavItem
-            icon={<MessageCircle className="w-full h-full" />}
-            label="Mensajes"
-            active={activeNav === "messages"}
-            onClick={() => setActiveNav("messages")}
-          /> */}
         </nav>
 
         {/* Filters */}
@@ -355,32 +391,60 @@ export default function DashboardPage({ session }: { session: Session }) {
             ) : (
               <div className="space-y-5">
 
-                {/* KPI grid */}
+                {/* KPI grid — 4 cols, 2 rows */}
                 <div className="grid grid-cols-4 gap-4">
+                  {/* Row 1 */}
                   <div className="col-span-2">
-                    <KpiCard label="Seguidores" value={latest?.followers_count ?? 0}
+                    <KpiCard
+                      label="Seguidores totales"
+                      value={latest?.followers_count ?? 0}
                       prevValue={prevLatest?.followers_count ?? 0}
-                      icon={<Users className="w-4 h-4" />} hero />
+                      icon={<Users className="w-4 h-4" />}
+                      hero
+                    />
                   </div>
-                  <KpiCard label="Alcance total" value={totalReach} prevValue={prevReach}
-                    icon={<Eye className="w-4 h-4" />} />
-                  <KpiCard label="Impresiones" value={totalImpr} prevValue={prevImpr}
-                    icon={<BarChart2 className="w-4 h-4" />} />
-                  <KpiCard label="Visitas perfil" value={totalViews} prevValue={prevViews}
-                    icon={<UserCircle className="w-4 h-4" />} />
-                  <KpiCard label="Clicks web" value={totalClicks} prevValue={prevClicks}
-                    icon={<MousePointerClick className="w-4 h-4" />} />
+                  <KpiCard
+                    label="Alcance total"
+                    value={totalReach}
+                    prevValue={prevReach}
+                    icon={<Eye className="w-4 h-4" />}
+                  />
+                  <KpiCard
+                    label="Visitas al perfil"
+                    value={totalViews}
+                    prevValue={prevViews}
+                    icon={<UserCircle className="w-4 h-4" />}
+                  />
+                  {/* Row 2 */}
                   <div className="col-span-2">
-                    <KpiCard label="Nuevos seguidores" value={newFolls} prevValue={prevNewF}
-                      icon={<TrendingUp className="w-4 h-4" />} />
+                    <KpiCard
+                      label="Nuevos seguidores"
+                      value={newFolls}
+                      prevValue={prevNewF}
+                      icon={<TrendingUp className="w-4 h-4" />}
+                    />
                   </div>
+                  <KpiCard
+                    label="Follower Conversion Rate"
+                    value={fcr}
+                    prevValue={prevFcr}
+                    displayValue={fcr.toFixed(2) + "%"}
+                    icon={<TrendingUp className="w-4 h-4" />}
+                  />
+                  <KpiCard
+                    label="Engagement Rate prom."
+                    value={avgER}
+                    prevValue={prevAvgER}
+                    displayValue={avgER.toFixed(2) + "%"}
+                    icon={<BarChart2 className="w-4 h-4" />}
+                  />
                 </div>
 
-                {/* Followers chart */}
+                {/* Chart 1 — Crecimiento de seguidores */}
                 <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                   <div className="mb-4">
                     <h2 className="text-sm font-bold text-gray-800">Crecimiento de seguidores</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Evolución en el período</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Evolución diaria en el período</p>
                   </div>
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -401,45 +465,52 @@ export default function DashboardPage({ session }: { session: Session }) {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Bottom row */}
+                {/* Charts 2 + 3 */}
                 <div className="grid grid-cols-5 gap-4 mb-10">
+
+                  {/* Chart 2 — Alcance vs Nuevos seguidores (dual Y-axis) */}
                   <div className="col-span-3 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                     <div className="mb-4">
-                      <h2 className="text-sm font-bold text-gray-800">Alcance vs Impresiones</h2>
+                      <h2 className="text-sm font-bold text-gray-800">Alcance vs Nuevos seguidores</h2>
                       <p className="text-xs text-gray-400 mt-0.5">Comparativa diaria</p>
                     </div>
                     <ResponsiveContainer width="100%" height={185}>
-                      <LineChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                      <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                         <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={fmtNum} />
+                        <YAxis yAxisId="left"  tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={44} tickFormatter={fmtNum} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={36} tickFormatter={fmtNum} />
                         <Tooltip content={<ChartTooltip />} />
                         <Legend wrapperStyle={{ color: "#9CA3AF", fontSize: 12, paddingTop: 10 }} />
-                        <Line type="monotone" dataKey="Alcance" stroke="#FF7200" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                        <Line type="monotone" dataKey="Impresiones" stroke="#FDBA74" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line yAxisId="left"  type="monotone" dataKey="Alcance"            stroke="#FF7200" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                        <Line yAxisId="right" type="monotone" dataKey="Nuevos seguidores"  stroke="#3B82F6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
 
+                  {/* Chart 3 — Engagement Rate por post */}
                   <div className="col-span-2 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                     <div className="mb-4">
-                      <h2 className="text-sm font-bold text-gray-800">Resumen</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Totales del período</p>
+                      <h2 className="text-sm font-bold text-gray-800">Engagement Rate por post</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Por publicación en el período</p>
                     </div>
-                    <div className="divide-y divide-gray-50">
-                      {[
-                        { label: "Alcance acumulado",  value: fmtNum(totalReach) },
-                        { label: "Impresiones totales", value: fmtNum(totalImpr) },
-                        { label: "Alcance prom / día",  value: fmtNum(metrics.length ? Math.round(totalReach / metrics.length) : 0) },
-                        { label: "Nuevos seguidores",   value: (newFolls >= 0 ? "+" : "") + fmtNum(newFolls) },
-                      ].map((row) => (
-                        <div key={row.label} className="flex items-center justify-between py-3">
-                          <span className="text-xs text-gray-400">{row.label}</span>
-                          <span className="text-sm font-bold text-gray-900">{row.value}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {engChartData.length === 0 ? (
+                      <div className="flex items-center justify-center h-[185px] text-gray-300 text-xs">
+                        Sin datos de posts
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={185}>
+                        <BarChart data={engChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                          <XAxis dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={36} tickFormatter={(v) => v + "%"} />
+                          <Tooltip content={<EngTooltip />} />
+                          <Bar dataKey="Eng. Rate" fill="#FF7200" radius={[4, 4, 0, 0]} maxBarSize={24} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
+
                 </div>
 
               </div>
