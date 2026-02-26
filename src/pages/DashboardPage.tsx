@@ -330,6 +330,9 @@ export default function DashboardPage({ session }: { session: Session }) {
     "Nuevos seguidores": r.follower_delta,
   }));
 
+  // Show ~5 evenly spaced X-axis labels regardless of period length
+  const xInterval = Math.max(0, Math.ceil(chartData.length / 5) - 1);
+
 
   if (loading) {
     return (
@@ -526,7 +529,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                      <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
                       <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={fmtNum} />
                       <Tooltip content={<ChartTooltip />} />
                       <Area type="monotone" dataKey="Seguidores" stroke="#FF7200" strokeWidth={2.5}
@@ -554,7 +557,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                        <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
                         <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={fmtNum} />
                         <Tooltip content={<ChartTooltip />} />
                         <Area type="monotone" dataKey="Alcance" stroke="#FF7200" strokeWidth={2.5}
