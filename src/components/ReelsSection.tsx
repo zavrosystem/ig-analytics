@@ -430,6 +430,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
 function PostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
   const engRate  = post.engagement_rate ?? 0;
   const gradient = GRADIENTS[index % GRADIENTS.length];
+  const totalEng = post.like_count + post.comments_count + post.saved + post.shares;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -440,6 +441,8 @@ function PostDetail({ post, index, onClose }: { post: Post; index: number; onClo
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pb-2">
+
+          {/* Header */}
           <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: gradient }}>
             <p>{post.caption || <span className="italic opacity-60">Sin caption</span>}</p>
             {post.posted_at && (
@@ -451,25 +454,35 @@ function PostDetail({ post, index, onClose }: { post: Post; index: number; onClo
 
           <RateBar rate={Math.round(engRate)} label="Engagement Rate" />
 
+          <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
+            <Eye className="w-3 h-3" />
+            {fmtN(post.reach)} alcance · {fmtN(post.impressions)} impresiones · {fmtN(totalEng)} interacciones
+          </div>
+
+          {/* ── ATRACCIÓN ─────────────────────────────────────────────── */}
+          <MetricSection title="Atracción">
+            <MetricRow label="Engagement Rate (alcance)"      value={pct(totalEng, post.reach)}             tooltip="Total interacciones / Cuentas alcanzadas" />
+            <MetricRow label="Engagement Rate (impresiones)"  value={pct(totalEng, post.impressions)}       tooltip="Total interacciones / Impresiones totales" />
+            <MetricRow label="Like Rate"                      value={pct(post.like_count, post.reach)}      tooltip="Likes / Cuentas alcanzadas" />
+            <MetricRow label="Comment Rate"                   value={pct(post.comments_count, post.reach)}  tooltip="Comentarios / Cuentas alcanzadas" />
+            <MetricRow label="Save Rate"                      value={pct(post.saved, post.reach)}           tooltip="Guardados / Cuentas alcanzadas" />
+            <MetricRow label="Share Rate"                     value={pct(post.shares, post.reach)}          tooltip="Compartidos / Cuentas alcanzadas" />
+          </MetricSection>
+
+          {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
+          <MetricSection title="Conversión">
+            <MetricRow label="Follower Conversion Rate"   value={pct(post.follows, post.reach)}                         tooltip="Nuevos seguidores / Cuentas alcanzadas" />
+            <MetricRow label="Engagement to Follow Ratio" value={pct(post.follows, totalEng)}                            tooltip="Nuevos seguidores / Total interacciones" />
+            <MetricRow label="Virality Coefficient"       value={pct(post.shares, post.reach)}                           tooltip="Compartidos / Cuentas alcanzadas" />
+            <MetricRow label="Authority Signal"           value={pct(post.comments_count + post.saved, post.reach)}      tooltip="(Comentarios + Guardados) / Cuentas alcanzadas" />
+          </MetricSection>
+
           {post.permalink && (
-            <a
-              href={post.permalink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-[#FF7200] hover:underline flex items-center gap-1"
-            >
+            <a href={post.permalink} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-[#FF7200] hover:underline flex items-center gap-1">
               Ver en Instagram →
             </a>
           )}
-
-          <StatGrid stats={[
-            { label: "Alcance",       value: fmtN(post.reach) },
-            { label: "Engagement",    value: `${engRate.toFixed(1)}%` },
-            { label: "Likes",         value: fmtN(post.like_count) },
-            { label: "Comentarios",   value: fmtN(post.comments_count) },
-            { label: "Guardados",     value: fmtN(post.saved) },
-            { label: "Compartidos",   value: fmtN(post.shares) },
-          ]} />
         </div>
       </DialogContent>
     </Dialog>
