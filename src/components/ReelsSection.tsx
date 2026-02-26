@@ -299,33 +299,33 @@ function ratio(num: number, den: number): string {
 
 // ── Video Post Detail (Reels) ─────────────────────────────────────────────────
 function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
-  const gradient      = GRADIENTS[index % GRADIENTS.length];
-  const totalEng      = post.like_count + post.comments_count + post.saved + post.shares;
-  const hasWatchData  = !!(post.avg_watch_time_ms && post.duration_ms && post.duration_ms > 0);
-  const hasPlaysData  = !!(post.plays && post.plays > 0 && post.video_views > 0);
+  const gradient     = GRADIENTS[index % GRADIENTS.length];
+  const totalEng     = post.like_count + post.comments_count + post.saved + post.shares;
+  const hasWatchData = !!(post.avg_watch_time_ms && post.duration_ms && post.duration_ms > 0);
+  const hasPlays     = !!(post.plays && post.plays > 0 && post.video_views > 0);
 
-  // Hook Rate: avg_watch_time/duration when available, else video_views/impressions proxy
+  // Retention Score = avg_watch_time / duration
+  const retentionScore = hasWatchData
+    ? post.avg_watch_time_ms! / post.duration_ms! * 100
+    : null;
+
+  // Hook Efficiency = 1 − % omisiones = video_views / plays
+  const hookEfficiency = hasPlays
+    ? post.video_views / post.plays * 100
+    : null;
+
+  // Attention Depth Score = hook_efficiency × retention_score / 100
+  const attentionDepth = hookEfficiency !== null && retentionScore !== null
+    ? hookEfficiency * retentionScore / 100
+    : null;
+
+  // Hook Rate bar (top): avg_watch_time/duration when available, else views/impressions proxy
   const hookRate = hasWatchData
-    ? Math.round((post.avg_watch_time_ms! / post.duration_ms!) * 100)
-    : post.impressions > 0 ? Math.round((post.video_views / post.impressions) * 100) : 0;
+    ? Math.round(post.avg_watch_time_ms! / post.duration_ms! * 100)
+    : post.impressions > 0 ? Math.round(post.video_views / post.impressions * 100) : 0;
   const hookRateLabel = hasWatchData
     ? "Hook Rate (tiempo promedio / duración)"
     : "Hook Rate (vistas / impresiones)";
-
-  // Hook Efficiency: % of plays that became a real view (≥3s)
-  const hookEfficiency = hasPlaysData
-    ? parseFloat((post.video_views / post.plays * 100).toFixed(2))
-    : null;
-
-  // Retention Score: avg watch / duration
-  const retentionScore = hasWatchData
-    ? parseFloat((post.avg_watch_time_ms! / post.duration_ms! * 100).toFixed(2))
-    : null;
-
-  // Attention Depth Score: hook × retention / 100 (geometric combination)
-  const attentionDepthScore = hookEfficiency !== null && retentionScore !== null
-    ? parseFloat((hookEfficiency * retentionScore / 100).toFixed(2))
-    : null;
 
   const curve = hasWatchData
     ? retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)
@@ -394,9 +394,9 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Like Rate"                 value={pct(post.like_count, post.video_views)}      tooltip="Likes / Visualizaciones totales" />
             <MetricRow label="Comment Rate"              value={pct(post.comments_count, post.video_views)}  tooltip="Comentarios / Visualizaciones totales" />
             <MetricRow label="Repeat Rate"               value={ratio(post.video_views, post.reach)}         tooltip="Visualizaciones totales / Cuentas alcanzadas" />
-            <MetricRow label="Attention Depth Score"     value={attentionDepthScore !== null ? attentionDepthScore.toFixed(2) + "%" : "--"} tooltip="Hook Efficiency × Retention Score / 100" />
-            <MetricRow label="Hook Efficiency"           value={hookEfficiency !== null ? hookEfficiency.toFixed(2) + "%" : "--"}           tooltip="Vistas reales (≥3s) / Total de plays" />
-            <MetricRow label="Retention Score"           value={retentionScore !== null ? retentionScore.toFixed(2) + "%" : "--"}           tooltip="Tiempo promedio de reproducción / Duración total del video" />
+            <MetricRow label="Attention Depth Score"     value={attentionDepth   !== null ? attentionDepth.toFixed(2)   + "%" : "--"} tooltip="(1 − % omisiones) × (Tiempo promedio / Duración)" />
+            <MetricRow label="Hook Efficiency"           value={hookEfficiency   !== null ? hookEfficiency.toFixed(2)   + "%" : "--"} tooltip="1 − % omisiones = Vistas reales (≥3s) / Plays totales" />
+            <MetricRow label="Retention Score"           value={retentionScore   !== null ? retentionScore.toFixed(2)   + "%" : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
           </MetricSection>
 
           {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
