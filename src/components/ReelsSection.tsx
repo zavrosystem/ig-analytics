@@ -334,7 +334,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         <DialogHeader>
           <DialogTitle className="text-gray-900 text-base font-semibold">Detalle del Reel</DialogTitle>
         </DialogHeader>
@@ -433,7 +433,7 @@ function PostDetail({ post, index, onClose }: { post: Post; index: number; onClo
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         <DialogHeader>
           <DialogTitle className="text-gray-900 text-base font-semibold">
             {post.media_type === "CAROUSEL_ALBUM" ? "Detalle del Carrusel" : "Detalle del Post"}
@@ -520,7 +520,7 @@ function ReelDetail({ reel, onClose }: { reel: Reel; onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         <DialogHeader>
           <DialogTitle className="text-gray-900 text-base font-semibold">Detalle del Reel</DialogTitle>
         </DialogHeader>
@@ -634,7 +634,7 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         <DialogHeader>
           <DialogTitle className="text-gray-900 text-base font-semibold">Detalle de Story</DialogTitle>
         </DialogHeader>
