@@ -8,7 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AreaChart, Area, LineChart, Line,
+  AreaChart, Area, ComposedChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import {
@@ -144,11 +144,27 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+const ReachFollowersTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const alcance   = payload.find((p: any) => p.name === "Alcance")?.value ?? 0;
+  const nuevos    = payload.find((p: any) => p.name === "Nuevos seguidores")?.value ?? 0;
+  const fcr       = alcance > 0 ? (nuevos / alcance * 100).toFixed(2) : "—";
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg text-xs space-y-1">
+      <p className="text-gray-400 mb-2">{label}</p>
+      <p className="font-semibold" style={{ color: "#FF7200" }}>Alcance: {fmtNum(alcance)}</p>
+      <p className="font-semibold" style={{ color: "#3B82F6" }}>Nuevos seguidores: {fmtNum(nuevos)}</p>
+      <p className="text-gray-500 pt-1 border-t border-gray-100">
+        Conversión: <span className="font-bold text-gray-700">{fcr}%</span>
+      </p>
+    </div>
+  );
+};
+
 // ── Engagement Heatmap ────────────────────────────────────────────────────────
-const HEATMAP_DAYS    = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-const HEATMAP_DAY_JS  = [1, 2, 3, 4, 5, 6, 0];
-const HEATMAP_LABELS  = ["12a–3a", "3a–6a", "6a–9a", "9a–12p", "12p–3p", "3p–6p", "6p–9p", "9p–12a"];
-const HEATMAP_FULL    = ["12am–3am", "3am–6am", "6am–9am", "9am–12pm", "12pm–3pm", "3pm–6pm", "6pm–9pm", "9pm–12am"];
+const HEATMAP_DAYS   = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const HEATMAP_DAY_JS = [1, 2, 3, 4, 5, 6, 0]; // JS getDay() values
+const HEATMAP_BLOCKS = ["12am", "3am", "6am", "9am", "12pm", "3pm", "6pm", "9pm"];
 
 function HeatmapChart({ posts }: { posts: PostRow[] }) {
   const grid = Array.from({ length: 8 }, (_, block) =>
@@ -166,14 +182,6 @@ function HeatmapChart({ posts }: { posts: PostRow[] }) {
   const allVals = grid.flat().filter((v): v is number => v !== null);
   const maxVal  = allVals.length ? Math.max(...allVals) : 1;
 
-  // Find best slot
-  let bestBlock = -1, bestDay = -1, bestVal = 0;
-  grid.forEach((row, block) => {
-    row.forEach((val, day) => {
-      if (val !== null && val > bestVal) { bestVal = val; bestBlock = block; bestDay = day; }
-    });
-  });
-
   if (allVals.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-300 text-xs">
@@ -183,65 +191,43 @@ function HeatmapChart({ posts }: { posts: PostRow[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 h-full">
-      {/* Grid */}
-      <div className="flex gap-2 flex-1 min-h-0">
-        {/* Hour labels */}
-        <div className="flex flex-col text-[9px] text-gray-400 text-right shrink-0" style={{ width: 34, paddingTop: 16 }}>
-          {HEATMAP_LABELS.map((b) => (
-            <div key={b} className="flex-1 flex items-center justify-end pr-1">{b}</div>
-          ))}
-        </div>
-
-        {/* Cells */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Day headers */}
-          <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {HEATMAP_DAYS.map((d) => (
-              <div key={d} className="text-center text-[9px] text-gray-400 font-medium">{d}</div>
-            ))}
-          </div>
-          {/* Rows */}
-          <div className="flex-1 flex flex-col gap-0.5">
-            {grid.map((row, block) => (
-              <div key={block} className="flex-1 grid grid-cols-7 gap-0.5">
-                {row.map((val, day) => {
-                  const isBest = block === bestBlock && day === bestDay && val !== null;
-                  return (
-                    <div
-                      key={day}
-                      className={cn("rounded-[3px] h-full", isBest && "ring-[1.5px] ring-[#FF7200] ring-offset-[1px]")}
-                      style={{
-                        backgroundColor: val !== null
-                          ? `rgba(255,114,0,${Math.max(0.1, (val / maxVal) * 0.88)})`
-                          : "#F0F0F0",
-                      }}
-                      title={val !== null
-                        ? `${HEATMAP_DAYS[day]} ${HEATMAP_FULL[block]}: ${val.toFixed(2)}% ER`
-                        : `${HEATMAP_DAYS[day]} ${HEATMAP_FULL[block]}: sin datos`}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="flex gap-2 h-full">
+      {/* Hour labels */}
+      <div className="flex flex-col text-[9px] text-gray-400 text-right shrink-0" style={{ width: 28, paddingTop: 18 }}>
+        {HEATMAP_BLOCKS.map((b) => (
+          <div key={b} className="flex-1 flex items-center justify-end pr-1">{b}</div>
+        ))}
       </div>
 
-      {/* Footer: legend + best slot */}
-      <div className="flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[9px] text-gray-400">Bajo</span>
-          <div className="w-14 h-2 rounded-full" style={{
-            background: "linear-gradient(to right, rgba(255,114,0,0.1), rgba(255,114,0,0.9))"
-          }} />
-          <span className="text-[9px] text-gray-400">Alto</span>
+      {/* Grid */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
+          {HEATMAP_DAYS.map((d) => (
+            <div key={d} className="text-center text-[9px] text-gray-400">{d}</div>
+          ))}
         </div>
-        {bestBlock >= 0 && (
-          <span className="text-[9px] text-gray-500">
-            Mejor: <span className="font-semibold text-[#FF7200]">{HEATMAP_DAYS[bestDay]} {HEATMAP_FULL[bestBlock]}</span>
-          </span>
-        )}
+        {/* Rows */}
+        <div className="flex-1 flex flex-col gap-0.5">
+          {grid.map((row, block) => (
+            <div key={block} className="flex-1 grid grid-cols-7 gap-0.5">
+              {row.map((val, day) => (
+                <div
+                  key={day}
+                  className="rounded-[3px] h-full"
+                  style={{
+                    backgroundColor: val !== null
+                      ? `rgba(255,114,0,${Math.max(0.12, (val / maxVal) * 0.9)})`
+                      : "#F3F4F6",
+                  }}
+                  title={val !== null
+                    ? `${HEATMAP_DAYS[day]} ${HEATMAP_BLOCKS[block]}: ${val.toFixed(2)}% ER`
+                    : "Sin datos"}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -553,23 +539,32 @@ export default function DashboardPage({ session }: { session: Session }) {
                 {/* Charts 2 + 3 */}
                 <div className="grid grid-cols-5 gap-4 mb-10">
 
-                  {/* Chart 2 — Alcance vs Nuevos seguidores (dual Y-axis) */}
+                  {/* Chart 2 — Alcance vs Nuevos seguidores (ComposedChart) */}
                   <div className="col-span-3 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                     <div className="mb-4">
                       <h2 className="text-sm font-bold text-gray-800">Alcance vs Nuevos seguidores</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Comparativa diaria</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Hover para ver % de conversión del día</p>
                     </div>
                     <ResponsiveContainer width="100%" height={185}>
-                      <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                      <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="alcanceGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"   stopColor="#FF7200" stopOpacity={0.12} />
+                            <stop offset="100%" stopColor="#FF7200" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                         <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} />
                         <YAxis yAxisId="left"  tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={44} tickFormatter={fmtNum} />
                         <YAxis yAxisId="right" orientation="right" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={36} tickFormatter={fmtNum} />
-                        <Tooltip content={<ChartTooltip />} />
+                        <Tooltip content={<ReachFollowersTooltip />} />
                         <Legend wrapperStyle={{ color: "#9CA3AF", fontSize: 12, paddingTop: 10 }} />
-                        <Line yAxisId="left"  type="monotone" dataKey="Alcance"            stroke="#FF7200" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                        <Line yAxisId="right" type="monotone" dataKey="Nuevos seguidores"  stroke="#3B82F6" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      </LineChart>
+                        <Area yAxisId="left" type="monotone" dataKey="Alcance"
+                          stroke="#FF7200" strokeWidth={2} fill="url(#alcanceGrad)" dot={false}
+                          activeDot={{ r: 4, fill: "#FF7200", stroke: "#fff", strokeWidth: 2 }} />
+                        <Bar yAxisId="right" dataKey="Nuevos seguidores"
+                          fill="#3B82F6" fillOpacity={0.75} radius={[3, 3, 0, 0]} maxBarSize={16} />
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
 
