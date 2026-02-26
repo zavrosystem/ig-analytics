@@ -8,7 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AreaChart, Area, LineChart, Line, BarChart, Bar,
+  AreaChart, Area, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import {
@@ -144,19 +144,77 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const EngTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
+// ── Engagement Heatmap ────────────────────────────────────────────────────────
+const HEATMAP_DAYS   = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const HEATMAP_DAY_JS = [1, 2, 3, 4, 5, 6, 0]; // JS getDay() values
+const HEATMAP_BLOCKS = ["12am", "3am", "6am", "9am", "12pm", "3pm", "6pm", "9pm"];
+
+function HeatmapChart({ posts }: { posts: PostRow[] }) {
+  const grid = Array.from({ length: 8 }, (_, block) =>
+    HEATMAP_DAY_JS.map(jsDay => {
+      const relevant = posts.filter(p => {
+        const dt = new Date(p.posted_at);
+        return dt.getDay() === jsDay && Math.floor(dt.getHours() / 3) === block;
+      });
+      return relevant.length > 0
+        ? relevant.reduce((s, p) => s + (p.engagement_rate ?? 0), 0) / relevant.length
+        : null;
+    })
+  );
+
+  const allVals = grid.flat().filter((v): v is number => v !== null);
+  const maxVal  = allVals.length ? Math.max(...allVals) : 1;
+
+  if (allVals.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-300 text-xs">
+        Sin datos suficientes
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-lg text-xs">
-      <p className="text-gray-400 mb-2">{label}</p>
-      {payload.map((p: any, i: number) => (
-        <p key={i} style={{ color: p.color }} className="font-semibold">
-          {p.name}: {p.value.toFixed(2)}%
-        </p>
-      ))}
+    <div className="flex gap-2 h-full">
+      {/* Hour labels */}
+      <div className="flex flex-col text-[9px] text-gray-400 text-right shrink-0" style={{ width: 28, paddingTop: 18 }}>
+        {HEATMAP_BLOCKS.map((b) => (
+          <div key={b} className="flex-1 flex items-center justify-end pr-1">{b}</div>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
+          {HEATMAP_DAYS.map((d) => (
+            <div key={d} className="text-center text-[9px] text-gray-400">{d}</div>
+          ))}
+        </div>
+        {/* Rows */}
+        <div className="flex-1 flex flex-col gap-0.5">
+          {grid.map((row, block) => (
+            <div key={block} className="flex-1 grid grid-cols-7 gap-0.5">
+              {row.map((val, day) => (
+                <div
+                  key={day}
+                  className="rounded-[3px] h-full"
+                  style={{
+                    backgroundColor: val !== null
+                      ? `rgba(255,114,0,${Math.max(0.12, (val / maxVal) * 0.9)})`
+                      : "#F3F4F6",
+                  }}
+                  title={val !== null
+                    ? `${HEATMAP_DAYS[day]} ${HEATMAP_BLOCKS[block]}: ${val.toFixed(2)}% ER`
+                    : "Sin datos"}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function DashboardPage({ session }: { session: Session }) {
@@ -255,10 +313,6 @@ export default function DashboardPage({ session }: { session: Session }) {
     "Nuevos seguidores": r.follower_delta,
   }));
 
-  const engChartData = posts.map((p) => ({
-    label: format(new Date(p.posted_at), "dd MMM", { locale: es }),
-    "Eng. Rate": parseFloat((p.engagement_rate ?? 0).toFixed(2)),
-  }));
 
   if (loading) {
     return (
@@ -488,27 +542,15 @@ export default function DashboardPage({ session }: { session: Session }) {
                     </ResponsiveContainer>
                   </div>
 
-                  {/* Chart 3 — Engagement Rate por post */}
+                  {/* Chart 3 — Heatmap horas de mayor engagement */}
                   <div className="col-span-2 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                    <div className="mb-4">
-                      <h2 className="text-sm font-bold text-gray-800">Engagement Rate por post</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Por publicación en el período</p>
+                    <div className="mb-3">
+                      <h2 className="text-sm font-bold text-gray-800">Horas de mayor engagement</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Cuándo publicar para más interacción</p>
                     </div>
-                    {engChartData.length === 0 ? (
-                      <div className="flex items-center justify-center h-[185px] text-gray-300 text-xs">
-                        Sin datos de posts
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height={185}>
-                        <BarChart data={engChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                          <XAxis dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={36} tickFormatter={(v) => v + "%"} />
-                          <Tooltip content={<EngTooltip />} />
-                          <Bar dataKey="Eng. Rate" fill="#FF7200" radius={[4, 4, 0, 0]} maxBarSize={24} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
+                    <div style={{ height: 185 }}>
+                      <HeatmapChart posts={posts} />
+                    </div>
                   </div>
 
                 </div>
