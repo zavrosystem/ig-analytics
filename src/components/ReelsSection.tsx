@@ -805,7 +805,6 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-gray-800">Posts</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Engagement rate = (likes + comentarios + guardados + compartidos) / alcance</p>
           </div>
           <div className="flex items-center gap-3">
             {loadingPosts
@@ -842,7 +841,6 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-gray-800">Reels</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Hook rate = vistas / impresiones</p>
           </div>
           <div className="flex items-center gap-3">
             {!loadingPosts && <span className="text-xs text-gray-400">{videoPosts.length} reels</span>}
@@ -871,7 +869,6 @@ export default function ContentSection({ clientId }: { clientId: string | null }
       <div className="space-y-4">
         <div>
           <h2 className="text-sm font-bold text-gray-800">Stories</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Completion rate = 1 − (salidas / impresiones)</p>
         </div>
         <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
       </div>
