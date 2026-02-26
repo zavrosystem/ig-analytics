@@ -145,9 +145,10 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 };
 
 // ── Engagement Heatmap ────────────────────────────────────────────────────────
-const HEATMAP_DAYS   = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-const HEATMAP_DAY_JS = [1, 2, 3, 4, 5, 6, 0]; // JS getDay() values
-const HEATMAP_BLOCKS = ["12am", "3am", "6am", "9am", "12pm", "3pm", "6pm", "9pm"];
+const HEATMAP_DAYS    = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+const HEATMAP_DAY_JS  = [1, 2, 3, 4, 5, 6, 0];
+const HEATMAP_LABELS  = ["12a–3a", "3a–6a", "6a–9a", "9a–12p", "12p–3p", "3p–6p", "6p–9p", "9p–12a"];
+const HEATMAP_FULL    = ["12am–3am", "3am–6am", "6am–9am", "9am–12pm", "12pm–3pm", "3pm–6pm", "6pm–9pm", "9pm–12am"];
 
 function HeatmapChart({ posts }: { posts: PostRow[] }) {
   const grid = Array.from({ length: 8 }, (_, block) =>
@@ -165,6 +166,14 @@ function HeatmapChart({ posts }: { posts: PostRow[] }) {
   const allVals = grid.flat().filter((v): v is number => v !== null);
   const maxVal  = allVals.length ? Math.max(...allVals) : 1;
 
+  // Find best slot
+  let bestBlock = -1, bestDay = -1, bestVal = 0;
+  grid.forEach((row, block) => {
+    row.forEach((val, day) => {
+      if (val !== null && val > bestVal) { bestVal = val; bestBlock = block; bestDay = day; }
+    });
+  });
+
   if (allVals.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-300 text-xs">
@@ -174,43 +183,65 @@ function HeatmapChart({ posts }: { posts: PostRow[] }) {
   }
 
   return (
-    <div className="flex gap-2 h-full">
-      {/* Hour labels */}
-      <div className="flex flex-col text-[9px] text-gray-400 text-right shrink-0" style={{ width: 28, paddingTop: 18 }}>
-        {HEATMAP_BLOCKS.map((b) => (
-          <div key={b} className="flex-1 flex items-center justify-end pr-1">{b}</div>
-        ))}
+    <div className="flex flex-col gap-2 h-full">
+      {/* Grid */}
+      <div className="flex gap-2 flex-1 min-h-0">
+        {/* Hour labels */}
+        <div className="flex flex-col text-[9px] text-gray-400 text-right shrink-0" style={{ width: 34, paddingTop: 16 }}>
+          {HEATMAP_LABELS.map((b) => (
+            <div key={b} className="flex-1 flex items-center justify-end pr-1">{b}</div>
+          ))}
+        </div>
+
+        {/* Cells */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Day headers */}
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {HEATMAP_DAYS.map((d) => (
+              <div key={d} className="text-center text-[9px] text-gray-400 font-medium">{d}</div>
+            ))}
+          </div>
+          {/* Rows */}
+          <div className="flex-1 flex flex-col gap-0.5">
+            {grid.map((row, block) => (
+              <div key={block} className="flex-1 grid grid-cols-7 gap-0.5">
+                {row.map((val, day) => {
+                  const isBest = block === bestBlock && day === bestDay && val !== null;
+                  return (
+                    <div
+                      key={day}
+                      className={cn("rounded-[3px] h-full", isBest && "ring-[1.5px] ring-[#FF7200] ring-offset-[1px]")}
+                      style={{
+                        backgroundColor: val !== null
+                          ? `rgba(255,114,0,${Math.max(0.1, (val / maxVal) * 0.88)})`
+                          : "#F0F0F0",
+                      }}
+                      title={val !== null
+                        ? `${HEATMAP_DAYS[day]} ${HEATMAP_FULL[block]}: ${val.toFixed(2)}% ER`
+                        : `${HEATMAP_DAYS[day]} ${HEATMAP_FULL[block]}: sin datos`}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 gap-0.5 mb-1">
-          {HEATMAP_DAYS.map((d) => (
-            <div key={d} className="text-center text-[9px] text-gray-400">{d}</div>
-          ))}
+      {/* Footer: legend + best slot */}
+      <div className="flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] text-gray-400">Bajo</span>
+          <div className="w-14 h-2 rounded-full" style={{
+            background: "linear-gradient(to right, rgba(255,114,0,0.1), rgba(255,114,0,0.9))"
+          }} />
+          <span className="text-[9px] text-gray-400">Alto</span>
         </div>
-        {/* Rows */}
-        <div className="flex-1 flex flex-col gap-0.5">
-          {grid.map((row, block) => (
-            <div key={block} className="flex-1 grid grid-cols-7 gap-0.5">
-              {row.map((val, day) => (
-                <div
-                  key={day}
-                  className="rounded-[3px] h-full"
-                  style={{
-                    backgroundColor: val !== null
-                      ? `rgba(255,114,0,${Math.max(0.12, (val / maxVal) * 0.9)})`
-                      : "#F3F4F6",
-                  }}
-                  title={val !== null
-                    ? `${HEATMAP_DAYS[day]} ${HEATMAP_BLOCKS[block]}: ${val.toFixed(2)}% ER`
-                    : "Sin datos"}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+        {bestBlock >= 0 && (
+          <span className="text-[9px] text-gray-500">
+            Mejor: <span className="font-semibold text-[#FF7200]">{HEATMAP_DAYS[bestDay]} {HEATMAP_FULL[bestBlock]}</span>
+          </span>
+        )}
       </div>
     </div>
   );
