@@ -769,33 +769,31 @@ export default function ContentSection({ clientId }: { clientId: string | null }
             <h2 className="text-sm font-bold text-gray-800">Posts</h2>
             <p className="text-xs text-gray-400 mt-0.5">Engagement rate = (likes + comentarios + guardados + compartidos) / alcance</p>
           </div>
-          {loadingPosts
-            ? <span className="text-xs text-gray-300">Cargando...</span>
-            : <span className="text-xs text-gray-400">{imagePosts.length} posts</span>
-          }
+          <div className="flex items-center gap-3">
+            {loadingPosts
+              ? <span className="text-xs text-gray-300">Cargando...</span>
+              : <span className="text-xs text-gray-400">{imagePosts.length} posts</span>
+            }
+            {imagePosts.length > PREVIEW && (
+              <button
+                onClick={() => openExpanded("posts")}
+                className="text-xs font-semibold text-[#FF7200] hover:underline"
+              >
+                Ver todos →
+              </button>
+            )}
+          </div>
         </div>
         {!loadingPosts && imagePosts.length === 0 ? (
           <div className="text-center py-10 text-gray-300 text-sm">
             No hay posts registrados todavía. El pipeline nocturno los cargará pronto.
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {imagePosts.slice(0, PREVIEW).map((post, i) => (
-                <PostCard key={post.id} post={post} index={i} onClick={() => setSelectedPost({ post, index: i })} />
-              ))}
-            </div>
-            {imagePosts.length > PREVIEW && (
-              <div className="flex justify-center pt-1">
-                <button
-                  onClick={() => openExpanded("posts")}
-                  className="px-5 py-2 rounded-xl text-xs font-semibold text-[#FF7200] border border-[#FF7200]/30 hover:bg-orange-50 transition-colors"
-                >
-                  Ver más — {imagePosts.length - PREVIEW} posts restantes
-                </button>
-              </div>
-            )}
-          </>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {imagePosts.slice(0, PREVIEW).map((post, i) => (
+              <PostCard key={post.id} post={post} index={i} onClick={() => setSelectedPost({ post, index: i })} />
+            ))}
+          </div>
         )}
       </div>
 
@@ -808,28 +806,26 @@ export default function ContentSection({ clientId }: { clientId: string | null }
             <h2 className="text-sm font-bold text-gray-800">Reels</h2>
             <p className="text-xs text-gray-400 mt-0.5">Hook rate = vistas / impresiones</p>
           </div>
-          {!loadingPosts && <span className="text-xs text-gray-400">{videoPosts.length} reels</span>}
+          <div className="flex items-center gap-3">
+            {!loadingPosts && <span className="text-xs text-gray-400">{videoPosts.length} reels</span>}
+            {videoPosts.length > PREVIEW && (
+              <button
+                onClick={() => openExpanded("reels")}
+                className="text-xs font-semibold text-[#FF7200] hover:underline"
+              >
+                Ver todos →
+              </button>
+            )}
+          </div>
         </div>
         {videoPosts.length === 0 ? (
           <div className="text-center py-8 text-gray-300 text-sm">No hay reels registrados todavía.</div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {videoPosts.slice(0, PREVIEW).map((post, i) => (
-                <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedVideo({ post, index: i + 3 })} />
-              ))}
-            </div>
-            {videoPosts.length > PREVIEW && (
-              <div className="flex justify-center pt-1">
-                <button
-                  onClick={() => openExpanded("reels")}
-                  className="px-5 py-2 rounded-xl text-xs font-semibold text-[#FF7200] border border-[#FF7200]/30 hover:bg-orange-50 transition-colors"
-                >
-                  Ver más — {videoPosts.length - PREVIEW} reels restantes
-                </button>
-              </div>
-            )}
-          </>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {videoPosts.slice(0, PREVIEW).map((post, i) => (
+              <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedVideo({ post, index: i + 3 })} />
+            ))}
+          </div>
         )}
       </div>
 
