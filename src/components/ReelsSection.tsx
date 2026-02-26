@@ -651,14 +651,49 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
   );
 }
 
+// ── Pagination bar ─────────────────────────────────────────────────────────────
+function Pagination({ page, total, pageSize, onChange }: {
+  page: number; total: number; pageSize: number; onChange: (p: number) => void;
+}) {
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-center gap-1 pt-4">
+      <button
+        onClick={() => onChange(page - 1)} disabled={page === 1}
+        className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >← Anterior</button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+        <button
+          key={p} onClick={() => onChange(p)}
+          className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+            p === page
+              ? "bg-[#FF7200] text-white"
+              : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+          }`}
+        >{p}</button>
+      ))}
+      <button
+        onClick={() => onChange(page + 1)} disabled={page === totalPages}
+        className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+      >Siguiente →</button>
+    </div>
+  );
+}
+
 // ── Main Export ────────────────────────────────────────────────────────────────
+const PREVIEW   = 6;   // items shown in summary view
+const PAGE_SIZE = 12;  // items per page in expanded view
+
 export default function ContentSection({ clientId }: { clientId: string | null }) {
-  const [posts,         setPosts]         = useState<Post[]>([]);
-  const [loadingPosts,  setLoadingPosts]  = useState(true);
-  const [selectedPost,  setSelectedPost]  = useState<{ post: Post; index: number } | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<{ post: Post; index: number } | null>(null);
-  const [selectedReel,  setSelectedReel]  = useState<Reel  | null>(null);
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [posts,           setPosts]           = useState<Post[]>([]);
+  const [loadingPosts,    setLoadingPosts]    = useState(true);
+  const [selectedPost,    setSelectedPost]    = useState<{ post: Post; index: number } | null>(null);
+  const [selectedVideo,   setSelectedVideo]   = useState<{ post: Post; index: number } | null>(null);
+  const [selectedReel,    setSelectedReel]    = useState<Reel  | null>(null);
+  const [selectedStory,   setSelectedStory]   = useState<Story | null>(null);
+  const [expandedSection, setExpandedSection] = useState<null | "posts" | "reels">(null);
+  const [page,            setPage]            = useState(1);
 
   useEffect(() => {
     if (!clientId) { setLoadingPosts(false); return; }
@@ -668,7 +703,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
       .eq("client_id", clientId)
       .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
       .order("posted_at", { ascending: false })
-      .limit(50)
+      .limit(100)
       .then(({ data }) => {
         setPosts((data as Post[]) ?? []);
         setLoadingPosts(false);
@@ -678,10 +713,56 @@ export default function ContentSection({ clientId }: { clientId: string | null }
   const imagePosts = posts.filter(p => p.media_type === "IMAGE" || p.media_type === "CAROUSEL_ALBUM");
   const videoPosts = posts.filter(p => p.media_type === "VIDEO" || p.media_type === "REELS");
 
+  const openExpanded = (section: "posts" | "reels") => {
+    setExpandedSection(section);
+    setPage(1);
+  };
+  const closeExpanded = () => setExpandedSection(null);
+
+  // ── Expanded paginated view ─────────────────────────────────────────────────
+  if (expandedSection) {
+    const isReels   = expandedSection === "reels";
+    const allItems  = isReels ? videoPosts : imagePosts;
+    const pageItems = allItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const baseIdx   = isReels ? 3 : 0;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={closeExpanded}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            <CornerUpLeft className="w-3.5 h-3.5" /> Volver
+          </button>
+          <div>
+            <h2 className="text-sm font-bold text-gray-800">{isReels ? "Reels" : "Posts"}</h2>
+            <p className="text-[10px] text-gray-400">{allItems.length} publicaciones</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {pageItems.map((post, i) => {
+            const globalIdx = (page - 1) * PAGE_SIZE + i + baseIdx;
+            return isReels
+              ? <PostCard key={post.id} post={post} index={globalIdx} onClick={() => setSelectedVideo({ post, index: globalIdx })} />
+              : <PostCard key={post.id} post={post} index={globalIdx} onClick={() => setSelectedPost({ post, index: globalIdx })} />;
+          })}
+        </div>
+
+        <Pagination page={page} total={allItems.length} pageSize={PAGE_SIZE} onChange={(p) => { setPage(p); window.scrollTo(0, 0); }} />
+
+        {selectedPost  && <PostDetail      post={selectedPost.post}   index={selectedPost.index}   onClose={() => setSelectedPost(null)}  />}
+        {selectedVideo && <VideoPostDetail post={selectedVideo.post}  index={selectedVideo.index}  onClose={() => setSelectedVideo(null)} />}
+      </div>
+    );
+  }
+
+  // ── Summary view (6 per section) ───────────────────────────────────────────
   return (
     <div className="space-y-8">
 
-      {/* Posts reales */}
+      {/* Posts */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -698,31 +779,57 @@ export default function ContentSection({ clientId }: { clientId: string | null }
             No hay posts registrados todavía. El pipeline nocturno los cargará pronto.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {imagePosts.map((post, i) => (
-              <PostCard key={post.id} post={post} index={i} onClick={() => setSelectedPost({ post, index: i })} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {imagePosts.slice(0, PREVIEW).map((post, i) => (
+                <PostCard key={post.id} post={post} index={i} onClick={() => setSelectedPost({ post, index: i })} />
+              ))}
+            </div>
+            {imagePosts.length > PREVIEW && (
+              <div className="flex justify-center pt-1">
+                <button
+                  onClick={() => openExpanded("posts")}
+                  className="px-5 py-2 rounded-xl text-xs font-semibold text-[#FF7200] border border-[#FF7200]/30 hover:bg-orange-50 transition-colors"
+                >
+                  Ver más — {imagePosts.length - PREVIEW} posts restantes
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Divider */}
       <div className="border-t border-gray-100" />
 
       {/* Reels */}
       <div className="space-y-4">
-        <div>
-          <h2 className="text-sm font-bold text-gray-800">Reels</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Hook rate = tiempo promedio / duración</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-gray-800">Reels</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Hook rate = vistas / impresiones</p>
+          </div>
+          {!loadingPosts && <span className="text-xs text-gray-400">{videoPosts.length} reels</span>}
         </div>
         {videoPosts.length === 0 ? (
-          <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
+          <div className="text-center py-8 text-gray-300 text-sm">No hay reels registrados todavía.</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {videoPosts.map((post, i) => (
-              <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedVideo({ post, index: i + 3 })} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {videoPosts.slice(0, PREVIEW).map((post, i) => (
+                <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedVideo({ post, index: i + 3 })} />
+              ))}
+            </div>
+            {videoPosts.length > PREVIEW && (
+              <div className="flex justify-center pt-1">
+                <button
+                  onClick={() => openExpanded("reels")}
+                  className="px-5 py-2 rounded-xl text-xs font-semibold text-[#FF7200] border border-[#FF7200]/30 hover:bg-orange-50 transition-colors"
+                >
+                  Ver más — {videoPosts.length - PREVIEW} reels restantes
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -735,10 +842,10 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
       </div>
 
-      {selectedPost  && <PostDetail       post={selectedPost.post}   index={selectedPost.index}   onClose={() => setSelectedPost(null)}  />}
-      {selectedVideo && <VideoPostDetail  post={selectedVideo.post}  index={selectedVideo.index}  onClose={() => setSelectedVideo(null)} />}
-      {selectedReel  && <ReelDetail       reel={selectedReel}                                      onClose={() => setSelectedReel(null)}  />}
-      {selectedStory && <StoryDetail      story={selectedStory}                                    onClose={() => setSelectedStory(null)} />}
+      {selectedPost  && <PostDetail      post={selectedPost.post}   index={selectedPost.index}   onClose={() => setSelectedPost(null)}  />}
+      {selectedVideo && <VideoPostDetail post={selectedVideo.post}  index={selectedVideo.index}  onClose={() => setSelectedVideo(null)} />}
+      {selectedReel  && <ReelDetail      reel={selectedReel}                                      onClose={() => setSelectedReel(null)}  />}
+      {selectedStory && <StoryDetail     story={selectedStory}                                    onClose={() => setSelectedStory(null)} />}
     </div>
   );
 }
