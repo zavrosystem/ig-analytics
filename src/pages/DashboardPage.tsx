@@ -8,8 +8,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AreaChart, Area, ComposedChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
   Users, Eye, BarChart2, UserCircle,
@@ -539,32 +539,28 @@ export default function DashboardPage({ session }: { session: Session }) {
                 {/* Charts 2 + 3 */}
                 <div className="grid grid-cols-5 gap-4 mb-10">
 
-                  {/* Chart 2 — Alcance vs Nuevos seguidores (ComposedChart) */}
+                  {/* Chart 2 — Alcance diario */}
                   <div className="col-span-3 bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
                     <div className="mb-4">
-                      <h2 className="text-sm font-bold text-gray-800">Alcance vs Nuevos seguidores</h2>
-                      <p className="text-xs text-gray-400 mt-0.5">Hover para ver % de conversión del día</p>
+                      <h2 className="text-sm font-bold text-gray-800">Alcance diario</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">Personas únicas alcanzadas por día</p>
                     </div>
                     <ResponsiveContainer width="100%" height={185}>
-                      <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                      <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                         <defs>
                           <linearGradient id="alcanceGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%"   stopColor="#FF7200" stopOpacity={0.12} />
+                            <stop offset="0%"   stopColor="#FF7200" stopOpacity={0.15} />
                             <stop offset="100%" stopColor="#FF7200" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                         <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} />
-                        <YAxis yAxisId="left"  tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={44} tickFormatter={fmtNum} />
-                        <YAxis yAxisId="right" orientation="right" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={36} tickFormatter={fmtNum} />
-                        <Tooltip content={<ReachFollowersTooltip />} />
-                        <Legend wrapperStyle={{ color: "#9CA3AF", fontSize: 12, paddingTop: 10 }} />
-                        <Area yAxisId="left" type="monotone" dataKey="Alcance"
-                          stroke="#FF7200" strokeWidth={2} fill="url(#alcanceGrad)" dot={false}
-                          activeDot={{ r: 4, fill: "#FF7200", stroke: "#fff", strokeWidth: 2 }} />
-                        <Bar yAxisId="right" dataKey="Nuevos seguidores"
-                          fill="#3B82F6" fillOpacity={0.75} radius={[3, 3, 0, 0]} maxBarSize={16} />
-                      </ComposedChart>
+                        <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={fmtNum} />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Area type="monotone" dataKey="Alcance" stroke="#FF7200" strokeWidth={2.5}
+                          fill="url(#alcanceGrad)" dot={false}
+                          activeDot={{ r: 5, fill: "#FF7200", stroke: "#fff", strokeWidth: 2 }} />
+                      </AreaChart>
                     </ResponsiveContainer>
                   </div>
 
