@@ -33,6 +33,7 @@ interface Post {
   avg_watch_time_ms: number | null;
   duration_ms: number | null;
   non_follower_reach_pct: number | null;
+  qualified_engagement_rate: number | null;
   plays: number;
 }
 
@@ -402,7 +403,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
           {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
           <MetricSection title="Calidad de audiencia">
             <MetricRow label="New Audience Penetration"    value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="% del alcance proveniente de no seguidores" />
-            <MetricRow label="Qualified Engagement Rate"   value="--" tooltip="% de interacciones de no seguidores — pendiente" />
+            <MetricRow label="Qualified Engagement Rate"   value={post.qualified_engagement_rate != null ? post.qualified_engagement_rate.toFixed(2) + "%" : "--"} tooltip="% de interacciones provenientes de no seguidores" />
           </MetricSection>
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
@@ -736,7 +737,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
     if (!clientId) { setLoadingPosts(false); return; }
     supabase
       .from("posts")
-      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate, avg_watch_time_ms, duration_ms, non_follower_reach_pct, plays")
+      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate, avg_watch_time_ms, duration_ms, non_follower_reach_pct, qualified_engagement_rate, plays")
       .eq("client_id", clientId)
       .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
       .order("posted_at", { ascending: false })
