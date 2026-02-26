@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Play, Heart, Bookmark, Share2, Clock, Eye, ChevronRight, CornerUpLeft, Image, LayoutGrid } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip,
@@ -27,6 +27,8 @@ interface Post {
   reach: number;
   impressions: number;
   video_views: number;
+  profile_visits: number;
+  follows: number;
   engagement_rate: number | null;
 }
 
@@ -257,6 +259,133 @@ function PostCard({ post, index, onClick }: { post: Post; index: number; onClick
         </div>
       </div>
     </button>
+  );
+}
+
+// ── Metric Row (for the 3-section breakdown) ───────────────────────────────────
+function MetricRow({ label, value, tooltip }: { label: string; value: string; tooltip?: string }) {
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+      <span className="text-xs text-gray-500" title={tooltip}>{label}</span>
+      <span className="text-sm font-bold text-gray-900">{value}</span>
+    </div>
+  );
+}
+
+function MetricSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 space-y-0">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function pct(num: number, den: number): string {
+  if (!den || den === 0) return "--";
+  return (num / den * 100).toFixed(2) + "%";
+}
+function ratio(num: number, den: number): string {
+  if (!den || den === 0) return "--";
+  return (num / den).toFixed(2) + "x";
+}
+
+// ── Video Post Detail (Reels) ─────────────────────────────────────────────────
+function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
+  const gradient  = GRADIENTS[index % GRADIENTS.length];
+  const totalEng  = post.like_count + post.comments_count + post.saved + post.shares;
+  // Hook Rate proxy: views/impressions (% of people who stopped to watch ≥3s)
+  const hookRate  = post.impressions > 0 ? Math.round((post.video_views / post.impressions) * 100) : 0;
+  const curve     = retentionCurve(post.video_views * 0.4 * 1000, post.video_views > 0 ? 1000 : 1000);
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="bg-white border-gray-100 max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-gray-900 text-base font-semibold">Detalle del Reel</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pb-2">
+
+          {/* Header */}
+          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: gradient }}>
+            <p>{post.caption || <span className="italic opacity-60">Sin caption</span>}</p>
+            {post.posted_at && (
+              <p className="text-white/50 text-xs">
+                {format(new Date(post.posted_at), "d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            )}
+          </div>
+
+          {/* Hook Rate */}
+          <RateBar rate={hookRate} label="Hook Rate (vistas / impresiones)" />
+
+          <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
+            <Eye className="w-3 h-3" />
+            {fmtN(post.video_views)} vistas · {fmtN(post.impressions)} impresiones · {fmtN(post.reach)} alcance
+          </div>
+
+          {/* Retention curve */}
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
+            <p className="text-[10px] text-gray-400">Simulada a partir de vistas vs impresiones</p>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <ResponsiveContainer width="100%" height={150}>
+                <AreaChart data={curve} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="retFillV" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#FF7200" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                  <XAxis dataKey="time" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} />
+                  <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area type="monotone" dataKey="Retención" stroke="#FF7200" strokeWidth={2} fill="url(#retFillV)" dot={false} activeDot={{ r: 4, fill: "#FF7200" }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* ── ATRACCIÓN ─────────────────────────────────────────────── */}
+          <MetricSection title="Atracción">
+            <MetricRow label="Engagement Rate (vistas)"  value={pct(totalEng, post.video_views)} tooltip="Total interacciones / Visualizaciones totales" />
+            <MetricRow label="Engagement Rate (alcance)" value={pct(totalEng, post.reach)}       tooltip="Total interacciones / Cuentas alcanzadas" />
+            <MetricRow label="Save Rate"                 value={pct(post.saved, post.video_views)}          tooltip="Guardados / Visualizaciones totales" />
+            <MetricRow label="Share Rate"                value={pct(post.shares, post.video_views)}          tooltip="Compartidos / Visualizaciones totales" />
+            <MetricRow label="Like Rate"                 value={pct(post.like_count, post.video_views)}      tooltip="Likes / Visualizaciones totales" />
+            <MetricRow label="Comment Rate"              value={pct(post.comments_count, post.video_views)}  tooltip="Comentarios / Visualizaciones totales" />
+            <MetricRow label="Repeat Rate"               value={ratio(post.video_views, post.reach)}         tooltip="Visualizaciones totales / Cuentas alcanzadas" />
+            <MetricRow label="Attention Depth Score"     value="--" tooltip="Requiere % omisiones y tiempo promedio de reproducción" />
+            <MetricRow label="Hook Efficiency"           value="--" tooltip="Requiere % omisiones del video" />
+            <MetricRow label="Retention Score"           value="--" tooltip="Requiere tiempo promedio y duración exacta del video" />
+          </MetricSection>
+
+          {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
+          <MetricSection title="Calidad de audiencia">
+            <MetricRow label="New Audience Penetration"    value="--" tooltip="% de visualizaciones de no seguidores — dato directo de Instagram" />
+            <MetricRow label="Qualified Engagement Rate"   value="--" tooltip="% de interacciones de no seguidores — dato directo de Instagram" />
+            <MetricRow label="Engagement Depth Score"      value="--" tooltip="Métrica compuesta — pendiente de definir" />
+          </MetricSection>
+
+          {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
+          <MetricSection title="Conversión">
+            <MetricRow label="Follower Conversion Rate"       value={pct(post.follows, post.reach)}                tooltip="Nuevos seguidores / Cuentas alcanzadas" />
+            <MetricRow label="Engagement to Follow Ratio"     value={pct(post.follows, totalEng)}                  tooltip="Nuevos seguidores / Total interacciones" />
+            <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares, post.reach)}                  tooltip="Compartidos / Cuentas alcanzadas" />
+            <MetricRow label="Virality Coefficient (views)"   value={pct(post.shares, post.video_views)}            tooltip="Compartidos / Visualizaciones totales" />
+            <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, post.video_views)} tooltip="(Comentarios + Guardados) / Visualizaciones totales" />
+          </MetricSection>
+
+          {post.permalink && (
+            <a href={post.permalink} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-[#FF7200] hover:underline flex items-center gap-1">
+              Ver en Instagram →
+            </a>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -527,6 +656,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
   const [posts,         setPosts]         = useState<Post[]>([]);
   const [loadingPosts,  setLoadingPosts]  = useState(true);
   const [selectedPost,  setSelectedPost]  = useState<{ post: Post; index: number } | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<{ post: Post; index: number } | null>(null);
   const [selectedReel,  setSelectedReel]  = useState<Reel  | null>(null);
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
@@ -534,7 +664,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
     if (!clientId) { setLoadingPosts(false); return; }
     supabase
       .from("posts")
-      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, engagement_rate")
+      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate")
       .eq("client_id", clientId)
       .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
       .order("posted_at", { ascending: false })
@@ -590,7 +720,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             {videoPosts.map((post, i) => (
-              <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedPost({ post, index: i + 3 })} />
+              <PostCard key={post.id} post={post} index={i + 3} onClick={() => setSelectedVideo({ post, index: i + 3 })} />
             ))}
           </div>
         )}
@@ -605,9 +735,10 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
       </div>
 
-      {selectedPost  && <PostDetail  post={selectedPost.post} index={selectedPost.index} onClose={() => setSelectedPost(null)} />}
-      {selectedReel  && <ReelDetail  reel={selectedReel}   onClose={() => setSelectedReel(null)}  />}
-      {selectedStory && <StoryDetail story={selectedStory} onClose={() => setSelectedStory(null)} />}
+      {selectedPost  && <PostDetail       post={selectedPost.post}   index={selectedPost.index}   onClose={() => setSelectedPost(null)}  />}
+      {selectedVideo && <VideoPostDetail  post={selectedVideo.post}  index={selectedVideo.index}  onClose={() => setSelectedVideo(null)} />}
+      {selectedReel  && <ReelDetail       reel={selectedReel}                                      onClose={() => setSelectedReel(null)}  />}
+      {selectedStory && <StoryDetail      story={selectedStory}                                    onClose={() => setSelectedStory(null)} />}
     </div>
   );
 }
