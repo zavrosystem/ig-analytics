@@ -30,6 +30,10 @@ interface Post {
   profile_visits: number;
   follows: number;
   engagement_rate: number | null;
+  avg_watch_time_ms: number | null;
+  duration_ms: number | null;
+  non_follower_reach_pct: number | null;
+  plays: number;
 }
 
 interface Reel {
@@ -245,7 +249,10 @@ function PostCard({ post, index, onClick }: { post: Post; index: number; onClick
           </div>
         )}
         <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white/90 text-xs font-medium drop-shadow">
-          <Heart className="w-3 h-3 fill-white/90" />{fmtN(post.like_count)}
+          {post.plays > 0
+            ? <><Play className="w-3 h-3 fill-white/90" />{fmtN(post.plays)}</>
+            : <><Heart className="w-3 h-3 fill-white/90" />{fmtN(post.like_count)}</>
+          }
         </div>
       </div>
       <div className="p-3 space-y-2">
@@ -292,11 +299,19 @@ function ratio(num: number, den: number): string {
 
 // ── Video Post Detail (Reels) ─────────────────────────────────────────────────
 function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
-  const gradient  = GRADIENTS[index % GRADIENTS.length];
-  const totalEng  = post.like_count + post.comments_count + post.saved + post.shares;
-  // Hook Rate proxy: views/impressions (% of people who stopped to watch ≥3s)
-  const hookRate  = post.impressions > 0 ? Math.round((post.video_views / post.impressions) * 100) : 0;
-  const curve     = retentionCurve(post.video_views * 0.4 * 1000, post.video_views > 0 ? 1000 : 1000);
+  const gradient    = GRADIENTS[index % GRADIENTS.length];
+  const totalEng    = post.like_count + post.comments_count + post.saved + post.shares;
+  const hasWatchData = !!(post.avg_watch_time_ms && post.duration_ms && post.duration_ms > 0);
+  // Hook Rate: use avg_watch_time/duration when available, else video_views/impressions proxy
+  const hookRate  = hasWatchData
+    ? Math.round((post.avg_watch_time_ms! / post.duration_ms!) * 100)
+    : post.impressions > 0 ? Math.round((post.video_views / post.impressions) * 100) : 0;
+  const hookRateLabel = hasWatchData
+    ? "Hook Rate (tiempo promedio / duración)"
+    : "Hook Rate (vistas / impresiones)";
+  const curve = hasWatchData
+    ? retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)
+    : retentionCurve(post.video_views * 0.4 * 1000, 20000);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -317,17 +332,22 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
           </div>
 
           {/* Hook Rate */}
-          <RateBar rate={hookRate} label="Hook Rate (vistas / impresiones)" />
+          <RateBar rate={hookRate} label={hookRateLabel} />
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
-            <Eye className="w-3 h-3" />
-            {fmtN(post.video_views)} vistas · {fmtN(post.impressions)} impresiones · {fmtN(post.reach)} alcance
+            {hasWatchData ? (
+              <><Clock className="w-3 h-3" />{fmtMs(post.avg_watch_time_ms!)} promedio · {fmtMs(post.duration_ms!)} duración · {fmtN(post.reach)} alcance</>
+            ) : (
+              <><Eye className="w-3 h-3" />{fmtN(post.video_views)} vistas · {fmtN(post.impressions)} impresiones · {fmtN(post.reach)} alcance</>
+            )}
           </div>
 
           {/* Retention curve */}
           <div className="space-y-2">
             <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
-            <p className="text-[10px] text-gray-400">Simulada a partir de vistas vs impresiones</p>
+            <p className="text-[10px] text-gray-400">
+              {hasWatchData ? "Simulada a partir del tiempo promedio de reproducción" : "Simulada a partir de vistas vs impresiones"}
+            </p>
             <div className="bg-gray-50 rounded-xl p-4">
               <ResponsiveContainer width="100%" height={150}>
                 <AreaChart data={curve} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
@@ -358,14 +378,13 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Repeat Rate"               value={ratio(post.video_views, post.reach)}         tooltip="Visualizaciones totales / Cuentas alcanzadas" />
             <MetricRow label="Attention Depth Score"     value="--" tooltip="Requiere % omisiones y tiempo promedio de reproducción" />
             <MetricRow label="Hook Efficiency"           value="--" tooltip="Requiere % omisiones del video" />
-            <MetricRow label="Retention Score"           value="--" tooltip="Requiere tiempo promedio y duración exacta del video" />
+            <MetricRow label="Retention Score"           value={hasWatchData ? pct(post.avg_watch_time_ms!, post.duration_ms!) : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
           </MetricSection>
 
           {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
           <MetricSection title="Calidad de audiencia">
-            <MetricRow label="New Audience Penetration"    value="--" tooltip="% de visualizaciones de no seguidores — dato directo de Instagram" />
-            <MetricRow label="Qualified Engagement Rate"   value="--" tooltip="% de interacciones de no seguidores — dato directo de Instagram" />
-            <MetricRow label="Engagement Depth Score"      value="--" tooltip="Métrica compuesta — pendiente de definir" />
+            <MetricRow label="New Audience Penetration"    value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="% del alcance proveniente de no seguidores" />
+            <MetricRow label="Qualified Engagement Rate"   value="--" tooltip="% de interacciones de no seguidores — pendiente" />
           </MetricSection>
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
@@ -699,7 +718,7 @@ export default function ContentSection({ clientId }: { clientId: string | null }
     if (!clientId) { setLoadingPosts(false); return; }
     supabase
       .from("posts")
-      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate")
+      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate, avg_watch_time_ms, duration_ms, non_follower_reach_pct, plays")
       .eq("client_id", clientId)
       .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
       .order("posted_at", { ascending: false })
