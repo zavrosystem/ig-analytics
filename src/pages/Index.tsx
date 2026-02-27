@@ -71,7 +71,7 @@ export default function Index() {
       <div className="min-h-screen bg-[#F6F5F3] flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <img src="/logo.png" alt="WishUp" className="w-12 h-12 rounded-2xl object-cover mb-4 shadow-[0_8px_24px_rgba(255,114,0,0.30)]" />
+            <img src="/logo.png" alt="WishUp" className="w-12 h-12 rounded-2xl object-cover mb-4 mx-auto shadow-[0_8px_24px_rgba(255,114,0,0.30)]" />
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Nueva contraseña</h1>
             <p className="text-sm text-gray-400 mt-1">Elige una contraseña segura</p>
           </div>
