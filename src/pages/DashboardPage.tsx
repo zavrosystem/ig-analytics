@@ -247,6 +247,7 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages">("dashboard");
   const [convCount, setConvCount]               = useState(0);
   const [totalSpend, setTotalSpend]             = useState(0);
+  const [followerView, setFollowerView]         = useState<"growth" | "loss">("growth");
 
   useEffect(() => {
     const load = async () => {
@@ -352,6 +353,8 @@ export default function DashboardPage({ session }: { session: Session }) {
     Seguidores:        r.followers_count,
     Alcance:           r.reach,
     "Nuevos seguidores": r.follower_delta,
+    Ganados:           r.follower_delta > 0 ? r.follower_delta : 0,
+    Perdidos:          r.follower_delta < 0 ? Math.abs(r.follower_delta) : 0,
   }));
 
   // Show ~5 evenly spaced X-axis labels regardless of period length
@@ -545,11 +548,39 @@ export default function DashboardPage({ session }: { session: Session }) {
                   />
                 </div>
 
-                {/* Chart 1 — Crecimiento de seguidores */}
+                {/* Chart 1 — Crecimiento / Decremento de seguidores */}
                 <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                  <div className="mb-4">
-                    <h2 className="text-sm font-bold text-gray-800">Crecimiento de seguidores</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Evolución diaria en el período</p>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="text-sm font-bold text-gray-800">Seguidores por día</h2>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {followerView === "growth" ? "Días con ganancia de seguidores" : "Días con pérdida de seguidores"}
+                      </p>
+                    </div>
+                    <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setFollowerView("growth")}
+                        className={cn(
+                          "text-xs font-semibold px-3 py-1.5 rounded-md transition-all",
+                          followerView === "growth"
+                            ? "bg-white text-[#FF7200] shadow-sm"
+                            : "text-gray-400 hover:text-gray-600",
+                        )}
+                      >
+                        Crecimiento
+                      </button>
+                      <button
+                        onClick={() => setFollowerView("loss")}
+                        className={cn(
+                          "text-xs font-semibold px-3 py-1.5 rounded-md transition-all",
+                          followerView === "loss"
+                            ? "bg-white text-red-500 shadow-sm"
+                            : "text-gray-400 hover:text-gray-600",
+                        )}
+                      >
+                        Decremento
+                      </button>
+                    </div>
                   </div>
                   <ResponsiveContainer width="100%" height={200}>
                     <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -558,14 +589,24 @@ export default function DashboardPage({ session }: { session: Session }) {
                           <stop offset="0%"   stopColor="#FF7200" stopOpacity={0.15} />
                           <stop offset="100%" stopColor="#FF7200" stopOpacity={0} />
                         </linearGradient>
+                        <linearGradient id="redGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%"   stopColor="#EF4444" stopOpacity={0.15} />
+                          <stop offset="100%" stopColor="#EF4444" stopOpacity={0} />
+                        </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                       <XAxis dataKey="date" tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
                       <YAxis tick={{ fill: "#9CA3AF", fontSize: 11 }} axisLine={false} tickLine={false} width={48} tickFormatter={fmtNum} />
                       <Tooltip content={<ChartTooltip />} />
-                      <Area type="monotone" dataKey="Seguidores" stroke="#FF7200" strokeWidth={2.5}
-                        fill="url(#orangeGrad)" dot={false}
-                        activeDot={{ r: 5, fill: "#FF7200", stroke: "#fff", strokeWidth: 2 }} />
+                      {followerView === "growth" ? (
+                        <Area type="monotone" dataKey="Ganados" stroke="#FF7200" strokeWidth={2.5}
+                          fill="url(#orangeGrad)" dot={false}
+                          activeDot={{ r: 5, fill: "#FF7200", stroke: "#fff", strokeWidth: 2 }} />
+                      ) : (
+                        <Area type="monotone" dataKey="Perdidos" stroke="#EF4444" strokeWidth={2.5}
+                          fill="url(#redGrad)" dot={false}
+                          activeDot={{ r: 5, fill: "#EF4444", stroke: "#fff", strokeWidth: 2 }} />
+                      )}
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
