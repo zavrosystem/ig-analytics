@@ -14,6 +14,7 @@ import {
 import {
   Users, Eye, BarChart2, UserCircle,
   LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, Megaphone,
+  MessageCircle, DollarSign,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -244,6 +245,8 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading]                   = useState(true);
   const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages">("dashboard");
+  const [convCount, setConvCount]               = useState(0);
+  const [totalSpend, setTotalSpend]             = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -291,8 +294,26 @@ export default function DashboardPage({ session }: { session: Session }) {
     setPosts(data ?? []);
   }, [selectedClientId, period]);
 
+  const loadMessages = useCallback(async () => {
+    if (!selectedClientId) return;
+    const since = format(subDays(new Date(), parseInt(period)), "yyyy-MM-dd");
+    const { count } = await supabase
+      .from("conversations")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", selectedClientId)
+      .gte("first_message_at", since + "T00:00:00");
+    setConvCount(count ?? 0);
+    const { data: adsData } = await supabase
+      .from("ad_campaigns")
+      .select("spend")
+      .eq("client_id", selectedClientId)
+      .gte("date_since", since);
+    setTotalSpend((adsData ?? []).reduce((s, r) => s + (r.spend ?? 0), 0));
+  }, [selectedClientId, period]);
+
   useEffect(() => { loadMetrics(); }, [loadMetrics]);
   useEffect(() => { loadPosts(); }, [loadPosts]);
+  useEffect(() => { loadMessages(); }, [loadMessages]);
 
   const handleClientChange = (id: string) => {
     setSelectedClientId(id);
@@ -313,6 +334,9 @@ export default function DashboardPage({ session }: { session: Session }) {
 
   const fcr     = totalReach > 0 ? newFolls / totalReach * 100 : 0;
   const prevFcr = prevReach  > 0 ? prevNewF / prevReach  * 100 : 0;
+
+  const costPerConv = convCount > 0 ? totalSpend / convCount : 0;
+  const fmtMoney    = (n: number) => n === 0 ? "—" : "$" + n.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const midPost    = Math.floor(posts.length / 2);
   const prevPosts  = posts.slice(0, midPost);
@@ -465,8 +489,8 @@ export default function DashboardPage({ session }: { session: Session }) {
             ) : (
               <div className="space-y-5">
 
-                {/* KPI grid — 3 cols × 2 rows, todas iguales */}
-                <div className="grid grid-cols-3 gap-4">
+                {/* KPI grid — 4 cols × 2 rows */}
+                <div className="grid grid-cols-4 gap-4">
                   <KpiCard
                     label="Seguidores totales"
                     value={latest?.followers_count ?? 0}
@@ -505,6 +529,19 @@ export default function DashboardPage({ session }: { session: Session }) {
                     prevValue={prevAvgER}
                     displayValue={avgER.toFixed(2) + "%"}
                     icon={<BarChart2 className="w-4 h-4" />}
+                  />
+                  <KpiCard
+                    label="Conversaciones iniciadas"
+                    value={convCount}
+                    prevValue={0}
+                    icon={<MessageCircle className="w-4 h-4" />}
+                  />
+                  <KpiCard
+                    label="Costo por conversación"
+                    value={costPerConv}
+                    prevValue={0}
+                    displayValue={fmtMoney(costPerConv)}
+                    icon={<DollarSign className="w-4 h-4" />}
                   />
                 </div>
 
