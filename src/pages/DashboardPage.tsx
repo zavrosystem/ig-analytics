@@ -378,11 +378,9 @@ export default function DashboardPage({ session }: { session: Session }) {
         {/* Brand */}
         <div className="h-16 px-5 flex items-center border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#FF7200] flex items-center justify-center">
-              <span className="text-white font-black text-xs">IG</span>
-            </div>
+            <img src="/logo.png" alt="WishUp" className="w-8 h-8 rounded-lg object-cover" />
             <div>
-              <p className="text-sm font-bold text-gray-900 leading-none">Analytics</p>
+              <p className="text-sm font-bold text-gray-900 leading-none">WishUp</p>
               <p className="text-[10px] text-gray-400 mt-0.5">Dashboard</p>
             </div>
           </div>

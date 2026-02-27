@@ -37,10 +37,8 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#FF7200] mb-4 shadow-[0_8px_24px_rgba(255,114,0,0.30)]">
-            <span className="text-white font-black text-base">IG</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Analytics</h1>
+          <img src="/logo.png" alt="WishUp" className="w-12 h-12 rounded-2xl object-cover mb-4 shadow-[0_8px_24px_rgba(255,114,0,0.30)]" />
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">WishUp</h1>
           <p className="text-sm text-gray-400 mt-1">
             {view === "login" ? "Accede a tu portal de métricas" : "Recupera tu contraseña"}
           </p>
