@@ -554,7 +554,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                     <div>
                       <h2 className="text-sm font-bold text-gray-800">Seguidores por día</h2>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {followerView === "growth" ? "Días con ganancia de seguidores" : "Días con pérdida de seguidores"}
+                        {followerView === "growth" ? "Días que ganaste seguidores" : "Días que perdiste seguidores"}
                       </p>
                     </div>
                     <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
@@ -567,7 +567,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                             : "text-gray-400 hover:text-gray-600",
                         )}
                       >
-                        Crecimiento
+                        Ganados
                       </button>
                       <button
                         onClick={() => setFollowerView("loss")}
@@ -578,7 +578,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                             : "text-gray-400 hover:text-gray-600",
                         )}
                       >
-                        Decremento
+                        Perdidos
                       </button>
                     </div>
                   </div>
