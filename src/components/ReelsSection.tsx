@@ -393,30 +393,30 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             )}
           </div>
 
-          {/* Retention curve */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
-            <p className="text-[10px] text-gray-400">
-              {hasWatchData ? "Simulada a partir del tiempo promedio de reproducción" : "Simulada a partir de vistas vs impresiones"}
-            </p>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <ResponsiveContainer width="100%" height={150}>
-                <AreaChart data={curve} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="retFillV" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#FF7200" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                  <XAxis dataKey="time" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} />
-                  <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="Retención" stroke="#FF7200" strokeWidth={2} fill="url(#retFillV)" dot={false} activeDot={{ r: 4, fill: "#FF7200" }} />
-                </AreaChart>
-              </ResponsiveContainer>
+          {/* Retention curve — solo cuando tenemos avg_watch_time Y duration */}
+          {hasWatchData && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
+              <p className="text-[10px] text-gray-400">Simulada a partir del tiempo promedio de reproducción</p>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <ResponsiveContainer width="100%" height={150}>
+                  <AreaChart data={retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="retFillV" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#FF7200" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="time" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} />
+                    <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Area type="monotone" dataKey="Retención" stroke="#FF7200" strokeWidth={2} fill="url(#retFillV)" dot={false} activeDot={{ r: 4, fill: "#FF7200" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ── ATRACCIÓN ─────────────────────────────────────────────── */}
           <MetricSection title="Atracción">
