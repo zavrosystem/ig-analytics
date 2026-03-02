@@ -320,17 +320,27 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
     ? hookEfficiency * retentionScore / 100
     : null;
 
-  // Hook Rate bar (top): avg_watch_time/duration when available, else views/impressions proxy
-  const hookRate = hasWatchData
+  // Denominator: plays → video_views → reach (en ese orden de preferencia)
+  const denominator = (post.plays && post.plays > 0) ? post.plays
+    : (post.video_views > 0) ? post.video_views
+    : post.reach;
+  const denominatorLabel = (post.plays && post.plays > 0) ? "plays"
+    : (post.video_views > 0) ? "visualizaciones"
+    : "alcance";
+
+  // Hook Rate: avg_watch_time/duration cuando está disponible, si no null (no 0%)
+  const hookRateValue: number | null = hasWatchData
     ? Math.round(post.avg_watch_time_ms! / post.duration_ms! * 100)
-    : post.impressions > 0 ? Math.round(post.video_views / post.impressions * 100) : 0;
+    : (post.impressions > 0 && post.video_views > 0)
+      ? Math.round(post.video_views / post.impressions * 100)
+      : null;
   const hookRateLabel = hasWatchData
     ? "Hook Rate (tiempo promedio / duración)"
     : "Hook Rate (vistas / impresiones)";
 
   const curve = hasWatchData
     ? retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)
-    : retentionCurve(post.video_views * 0.4 * 1000, 20000);
+    : retentionCurve(5000, 20000);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -351,13 +361,22 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
           </div>
 
           {/* Hook Rate */}
-          <RateBar rate={hookRate} label={hookRateLabel} />
+          {hookRateValue !== null
+            ? <RateBar rate={hookRateValue} label={hookRateLabel} />
+            : (
+              <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Hook Rate</span>
+                <div className="text-4xl font-bold text-gray-300">--</div>
+                <p className="text-xs text-gray-400">No disponible — Meta API v22 no provee avg_watch_time para este contenido</p>
+              </div>
+            )
+          }
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
             {hasWatchData ? (
               <><Clock className="w-3 h-3" />{fmtMs(post.avg_watch_time_ms!)} promedio · {fmtMs(post.duration_ms!)} duración · {fmtN(post.reach)} alcance</>
             ) : (
-              <><Eye className="w-3 h-3" />{fmtN(post.video_views)} vistas · {fmtN(post.impressions)} impresiones · {fmtN(post.reach)} alcance</>
+              <><Eye className="w-3 h-3" />{fmtN(denominator)} {denominatorLabel} · {fmtN(post.reach)} alcance</>
             )}
           </div>
 
@@ -388,13 +407,13 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
 
           {/* ── ATRACCIÓN ─────────────────────────────────────────────── */}
           <MetricSection title="Atracción">
-            <MetricRow label="Engagement Rate (vistas)"  value={pct(totalEng, post.video_views)} tooltip="Total interacciones / Visualizaciones totales" />
+            <MetricRow label={`Engagement Rate (${denominatorLabel})`} value={pct(totalEng, denominator)} tooltip={`Total interacciones / ${denominatorLabel}`} />
             <MetricRow label="Engagement Rate (alcance)" value={pct(totalEng, post.reach)}       tooltip="Total interacciones / Cuentas alcanzadas" />
-            <MetricRow label="Save Rate"                 value={pct(post.saved, post.video_views)}          tooltip="Guardados / Visualizaciones totales" />
-            <MetricRow label="Share Rate"                value={pct(post.shares, post.video_views)}          tooltip="Compartidos / Visualizaciones totales" />
-            <MetricRow label="Like Rate"                 value={pct(post.like_count, post.video_views)}      tooltip="Likes / Visualizaciones totales" />
-            <MetricRow label="Comment Rate"              value={pct(post.comments_count, post.video_views)}  tooltip="Comentarios / Visualizaciones totales" />
-            <MetricRow label="Repeat Rate"               value={ratio(post.video_views, post.reach)}         tooltip="Visualizaciones totales / Cuentas alcanzadas" />
+            <MetricRow label="Save Rate"                 value={pct(post.saved, denominator)}          tooltip={`Guardados / ${denominatorLabel}`} />
+            <MetricRow label="Share Rate"                value={pct(post.shares, denominator)}          tooltip={`Compartidos / ${denominatorLabel}`} />
+            <MetricRow label="Like Rate"                 value={pct(post.like_count, denominator)}      tooltip={`Likes / ${denominatorLabel}`} />
+            <MetricRow label="Comment Rate"              value={pct(post.comments_count, denominator)}  tooltip={`Comentarios / ${denominatorLabel}`} />
+            <MetricRow label="Repeat Rate"               value={ratio(denominator, post.reach)}         tooltip={`${denominatorLabel} / Cuentas alcanzadas`} />
             <MetricRow label="Attention Depth Score"     value={attentionDepth   !== null ? attentionDepth.toFixed(2)   + "%" : "--"} tooltip="(1 − % omisiones) × (Tiempo promedio / Duración)" />
             <MetricRow label="Hook Efficiency"           value={hookEfficiency   !== null ? hookEfficiency.toFixed(2)   + "%" : "--"} tooltip="1 − % omisiones = Vistas reales (≥3s) / Plays totales" />
             <MetricRow label="Retention Score"           value={retentionScore   !== null ? retentionScore.toFixed(2)   + "%" : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
@@ -411,8 +430,8 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Follower Conversion Rate"       value={pct(post.follows, post.reach)}                tooltip="Nuevos seguidores / Cuentas alcanzadas" />
             <MetricRow label="Engagement to Follow Ratio"     value={pct(post.follows, totalEng)}                  tooltip="Nuevos seguidores / Total interacciones" />
             <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares, post.reach)}                  tooltip="Compartidos / Cuentas alcanzadas" />
-            <MetricRow label="Virality Coefficient (views)"   value={pct(post.shares, post.video_views)}            tooltip="Compartidos / Visualizaciones totales" />
-            <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, post.video_views)} tooltip="(Comentarios + Guardados) / Visualizaciones totales" />
+            <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.shares, denominator)}   tooltip={`Compartidos / ${denominatorLabel}`} />
+            <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, denominator)} tooltip={`(Comentarios + Guardados) / ${denominatorLabel}`} />
           </MetricSection>
 
           {post.permalink && (
