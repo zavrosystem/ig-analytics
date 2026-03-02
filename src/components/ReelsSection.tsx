@@ -306,9 +306,9 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
   const hasAvgWatch  = !!(post.avg_watch_time_ms && post.avg_watch_time_ms > 0);
   const hasPlays     = !!(post.plays && post.plays > 0);
 
-  // Retention Score = avg_watch_time / duration
-  const retentionScore = hasWatchData
-    ? post.avg_watch_time_ms! / post.duration_ms! * 100
+  // Retention Score = avg_watch_time / duration (real o estimada)
+  const retentionScore = (hasAvgWatch && effectiveDuration)
+    ? post.avg_watch_time_ms! / effectiveDuration * 100
     : null;
 
   // Hook Efficiency = 1 − % omisiones = video_views / plays
@@ -329,19 +329,23 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
     : (post.video_views > 0) ? "visualizaciones"
     : "alcance";
 
-  // Hook Rate: avg_watch_time/duration cuando está disponible, si no null (no 0%)
-  const hookRateValue: number | null = hasWatchData
-    ? Math.round(post.avg_watch_time_ms! / post.duration_ms! * 100)
+  // Hook Rate: avg_watch_time/duration (real o estimada)
+  const hookRateValue: number | null = (hasAvgWatch && effectiveDuration)
+    ? Math.round(post.avg_watch_time_ms! / effectiveDuration * 100)
     : (post.impressions > 0 && post.video_views > 0)
       ? Math.round(post.video_views / post.impressions * 100)
       : null;
-  const hookRateLabel = hasWatchData
-    ? "Hook Rate (tiempo promedio / duración)"
+  const hookRateLabel = (hasAvgWatch && effectiveDuration)
+    ? isDurationEstimated
+      ? "Hook Rate (tiempo promedio / duración estimada)"
+      : "Hook Rate (tiempo promedio / duración)"
     : "Hook Rate (vistas / impresiones)";
 
-  const curve = hasWatchData
-    ? retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)
-    : retentionCurve(5000, 20000);
+  // Duración efectiva: real si disponible, estimada como avg*2 (50% retención estándar de Reels)
+  const effectiveDuration = hasWatchData
+    ? post.duration_ms!
+    : (post.avg_watch_time_ms ? post.avg_watch_time_ms * 2 : null);
+  const isDurationEstimated = hasAvgWatch && !hasWatchData;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -393,14 +397,18 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             )}
           </div>
 
-          {/* Retention curve — solo cuando tenemos avg_watch_time Y duration */}
-          {hasWatchData && (
+          {/* Retention curve — cuando hay avg_watch_time (duración real o estimada) */}
+          {hasAvgWatch && effectiveDuration && (
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de retención estimada</p>
-              <p className="text-[10px] text-gray-400">Simulada a partir del tiempo promedio de reproducción</p>
+              <p className="text-[10px] text-gray-400">
+                {isDurationEstimated
+                  ? "Duración no disponible — estimado asumiendo 50% de retención (estándar Reels)"
+                  : "Simulada a partir del tiempo promedio de reproducción"}
+              </p>
               <div className="bg-gray-50 rounded-xl p-4">
                 <ResponsiveContainer width="100%" height={150}>
-                  <AreaChart data={retentionCurve(post.avg_watch_time_ms!, post.duration_ms!)} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                  <AreaChart data={retentionCurve(post.avg_watch_time_ms!, effectiveDuration)} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                     <defs>
                       <linearGradient id="retFillV" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
