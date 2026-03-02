@@ -306,6 +306,12 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
   const hasAvgWatch  = !!(post.avg_watch_time_ms && post.avg_watch_time_ms > 0);
   const hasPlays     = !!(post.plays && post.plays > 0);
 
+  // Duración efectiva: real si disponible, estimada como avg*2 (50% retención estándar de Reels)
+  const effectiveDuration = hasWatchData
+    ? post.duration_ms!
+    : (post.avg_watch_time_ms ? post.avg_watch_time_ms * 2 : null);
+  const isDurationEstimated = hasAvgWatch && !hasWatchData;
+
   // Retention Score = avg_watch_time / duration (real o estimada)
   const retentionScore = (hasAvgWatch && effectiveDuration)
     ? post.avg_watch_time_ms! / effectiveDuration * 100
@@ -340,12 +346,6 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
       ? "Hook Rate (tiempo promedio / duración estimada)"
       : "Hook Rate (tiempo promedio / duración)"
     : "Hook Rate (vistas / impresiones)";
-
-  // Duración efectiva: real si disponible, estimada como avg*2 (50% retención estándar de Reels)
-  const effectiveDuration = hasWatchData
-    ? post.duration_ms!
-    : (post.avg_watch_time_ms ? post.avg_watch_time_ms * 2 : null);
-  const isDurationEstimated = hasAvgWatch && !hasWatchData;
 
   return (
     <Dialog open onOpenChange={onClose}>
