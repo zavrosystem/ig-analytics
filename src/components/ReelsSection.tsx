@@ -303,7 +303,8 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
   const gradient     = GRADIENTS[index % GRADIENTS.length];
   const totalEng     = post.like_count + post.comments_count + post.saved + post.shares;
   const hasWatchData = !!(post.avg_watch_time_ms && post.duration_ms && post.duration_ms > 0);
-  const hasPlays     = !!(post.plays && post.plays > 0 && post.video_views > 0);
+  const hasAvgWatch  = !!(post.avg_watch_time_ms && post.avg_watch_time_ms > 0);
+  const hasPlays     = !!(post.plays && post.plays > 0);
 
   // Retention Score = avg_watch_time / duration
   const retentionScore = hasWatchData
@@ -360,21 +361,33 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             )}
           </div>
 
-          {/* Hook Rate */}
+          {/* Hook Rate / Watch Time */}
           {hookRateValue !== null
             ? <RateBar rate={hookRateValue} label={hookRateLabel} />
-            : (
-              <div className="bg-gray-50 rounded-xl p-4 space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Hook Rate</span>
-                <div className="text-4xl font-bold text-gray-300">--</div>
-                <p className="text-xs text-gray-400">No disponible — Meta API v22 no provee avg_watch_time para este contenido</p>
-              </div>
-            )
+            : hasAvgWatch
+              ? (
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Tiempo promedio de reproducción</span>
+                  <div className="text-4xl font-bold text-gray-900">{fmtMs(post.avg_watch_time_ms!)}</div>
+                  {hasPlays && (
+                    <p className="text-xs text-gray-500">{fmtN(post.plays!)} plays · {fmtN(post.reach)} alcance</p>
+                  )}
+                </div>
+              )
+              : (
+                <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Hook Rate</span>
+                  <div className="text-4xl font-bold text-gray-300">--</div>
+                  <p className="text-xs text-gray-400">No disponible — Meta API v22 no provee avg_watch_time</p>
+                </div>
+              )
           }
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
             {hasWatchData ? (
               <><Clock className="w-3 h-3" />{fmtMs(post.avg_watch_time_ms!)} promedio · {fmtMs(post.duration_ms!)} duración · {fmtN(post.reach)} alcance</>
+            ) : hasAvgWatch ? (
+              <><Clock className="w-3 h-3" />{fmtMs(post.avg_watch_time_ms!)} promedio · {fmtN(post.reach)} alcance</>
             ) : (
               <><Eye className="w-3 h-3" />{fmtN(denominator)} {denominatorLabel} · {fmtN(post.reach)} alcance</>
             )}
