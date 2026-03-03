@@ -240,10 +240,6 @@ function PostCard({ post, index, onClick }: { post: Post; index: number; onClick
             }
           </div>
         )}
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold"
-          style={{ backgroundColor: color + "33", color, border: `1px solid ${color}55` }}>
-          {engRate.toFixed(1)}%
-        </div>
         {isCarousel && (
           <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-black/40 text-white text-[10px] font-medium">
             Carrusel
@@ -362,10 +358,10 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
         <div className="space-y-4 pb-2">
 
           {/* Header */}
-          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: gradient }}>
-            <p>{post.caption || <span className="italic opacity-60">Sin caption</span>}</p>
+          <div className="rounded-xl p-4 text-sm bg-gray-50 leading-relaxed space-y-1">
+            <p className="text-gray-800">{post.caption || <span className="italic text-gray-400">Sin caption</span>}</p>
             {post.posted_at && (
-              <p className="text-white/50 text-xs">
+              <p className="text-gray-400 text-xs">
                 {format(new Date(post.posted_at), "d 'de' MMMM yyyy", { locale: es })}
               </p>
             )}
