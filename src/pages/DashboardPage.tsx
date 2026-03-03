@@ -116,15 +116,17 @@ function KpiCard({
         )}>
           {displayValue ?? fmtNum(value)}
         </div>
-        {t && (
-          <div className={cn(
-            "flex items-center gap-1 text-xs font-semibold mt-2",
-            hero ? "text-white/70" : t.up ? "text-emerald-500" : "text-red-400",
-          )}>
-            {t.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {t.pct}% vs período anterior
-          </div>
-        )}
+        <div className={cn(
+          "flex items-center gap-1 text-xs font-semibold mt-2 min-h-[1.25rem]",
+          hero ? "text-white/70" : t ? (t.up ? "text-emerald-500" : "text-red-400") : "text-transparent",
+        )}>
+          {t && (
+            <>
+              {t.up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {t.pct}% vs período anterior
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
