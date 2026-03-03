@@ -323,7 +323,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
     ? post.video_views / post.plays! * 100
     : null;
   const hookEfficiencyEstimated = hasAvgWatch
-    ? Math.exp(-3000 / post.avg_watch_time_ms!) * 100
+    ? Math.exp(-5000 / post.avg_watch_time_ms!) * 100
     : null;
   const hookEfficiency = hookEfficiencyReal ?? hookEfficiencyEstimated;
   const hookEfficiencyIsEstimated = hookEfficiencyReal === null && hookEfficiencyEstimated !== null;
@@ -442,7 +442,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Comment Rate"              value={pct(post.comments_count, denominator)}  tooltip={`Comentarios / ${denominatorLabel}`} />
             <MetricRow label="Repeat Rate"               value={ratio(denominator, post.reach)}         tooltip={`${denominatorLabel} / Cuentas alcanzadas`} />
             <MetricRow label="Attention Depth Score"     value={attentionDepth   !== null ? attentionDepth.toFixed(2)   + "%" : "--"} tooltip="Hook Efficiency × Retention Score" />
-            <MetricRow label={hookEfficiencyIsEstimated ? "Hook Efficiency (est.)" : "Hook Efficiency"} value={hookEfficiency !== null ? hookEfficiency.toFixed(2) + "%" : "--"} tooltip={hookEfficiencyIsEstimated ? "Estimado: P(ver ≥3s) = e^(−3s / avg_watch_time) — Meta no expone video_views para este tipo de cuenta" : "Vistas reales (≥3s) / Plays totales"} />
+            <MetricRow label={hookEfficiencyIsEstimated ? "Hook Efficiency (est.)" : "Hook Efficiency"} value={hookEfficiency !== null ? hookEfficiency.toFixed(2) + "%" : "--"} tooltip={hookEfficiencyIsEstimated ? "Estimado: P(ver ≥5s) = e^(−5s / avg_watch_time) — Meta no expone video_views para este tipo de cuenta" : "Vistas reales (≥5s) / Plays totales"} />
             <MetricRow label="Retention Score"           value={retentionScore   !== null ? retentionScore.toFixed(2)   + "%" : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
           </MetricSection>
 
