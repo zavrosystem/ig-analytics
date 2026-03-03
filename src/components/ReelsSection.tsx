@@ -317,10 +317,16 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
     ? post.avg_watch_time_ms! / effectiveDuration * 100
     : null;
 
-  // Hook Efficiency = 1 − % omisiones = video_views / plays
-  const hookEfficiency = hasPlays
-    ? post.video_views / post.plays * 100
+  // Hook Efficiency = video_views / plays (% que aguantó el hook, ≥3s)
+  // Fallback: modelo exponencial P(ver ≥ 3s) = e^(-3000 / avg_watch_time_ms)
+  const hookEfficiencyReal = (post.video_views > 0 && hasPlays)
+    ? post.video_views / post.plays! * 100
     : null;
+  const hookEfficiencyEstimated = hasAvgWatch
+    ? Math.exp(-3000 / post.avg_watch_time_ms!) * 100
+    : null;
+  const hookEfficiency = hookEfficiencyReal ?? hookEfficiencyEstimated;
+  const hookEfficiencyIsEstimated = hookEfficiencyReal === null && hookEfficiencyEstimated !== null;
 
   // Attention Depth Score = hook_efficiency × retention_score / 100
   const attentionDepth = hookEfficiency !== null && retentionScore !== null
@@ -435,8 +441,8 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Like Rate"                 value={pct(post.like_count, denominator)}      tooltip={`Likes / ${denominatorLabel}`} />
             <MetricRow label="Comment Rate"              value={pct(post.comments_count, denominator)}  tooltip={`Comentarios / ${denominatorLabel}`} />
             <MetricRow label="Repeat Rate"               value={ratio(denominator, post.reach)}         tooltip={`${denominatorLabel} / Cuentas alcanzadas`} />
-            <MetricRow label="Attention Depth Score"     value={attentionDepth   !== null ? attentionDepth.toFixed(2)   + "%" : "--"} tooltip="(1 − % omisiones) × (Tiempo promedio / Duración)" />
-            <MetricRow label="Hook Efficiency"           value={hookEfficiency   !== null ? hookEfficiency.toFixed(2)   + "%" : "--"} tooltip="1 − % omisiones = Vistas reales (≥3s) / Plays totales" />
+            <MetricRow label="Attention Depth Score"     value={attentionDepth   !== null ? attentionDepth.toFixed(2)   + "%" : "--"} tooltip="Hook Efficiency × Retention Score" />
+            <MetricRow label={hookEfficiencyIsEstimated ? "Hook Efficiency (est.)" : "Hook Efficiency"} value={hookEfficiency !== null ? hookEfficiency.toFixed(2) + "%" : "--"} tooltip={hookEfficiencyIsEstimated ? "Estimado: P(ver ≥3s) = e^(−3s / avg_watch_time) — Meta no expone video_views para este tipo de cuenta" : "Vistas reales (≥3s) / Plays totales"} />
             <MetricRow label="Retention Score"           value={retentionScore   !== null ? retentionScore.toFixed(2)   + "%" : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
           </MetricSection>
 
