@@ -668,10 +668,6 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
           : <Eye className="w-8 h-8 text-gray-300" />
         }
         <div className="absolute inset-0 bg-black/25" />
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold"
-          style={{ backgroundColor: color + "33", color, border: `1px solid ${color}55` }}>
-          {rate}%
-        </div>
         <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white/90 text-xs font-medium drop-shadow">
           <Eye className="w-3 h-3" />{fmtN(story.impressions)}
         </div>
