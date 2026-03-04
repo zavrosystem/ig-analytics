@@ -695,7 +695,7 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
 
 function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) {
   const rate    = getCompletionRate(story);
-  const engRate = Math.round(((story.replies + story.shares) / story.reach) * 1000) / 10;
+  const engRate = story.reach > 0 ? Math.round((story.replies / story.reach) * 1000) / 10 : 0;
   const curve   = storyDropoffCurve(story.exits, story.impressions, story.duration_ms);
 
   return (
@@ -714,7 +714,7 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
             <Clock className="w-3 h-3" />
-            Duración: {fmtMs(story.duration_ms)} · {fmtN(story.exits)} salidas de {fmtN(story.impressions)} impresiones
+            {story.duration_ms ? `Duración: ${fmtMs(story.duration_ms)} · ` : ""}{fmtN(story.exits)} salidas de {fmtN(story.impressions)} impresiones
           </div>
 
           <div className="space-y-2">
@@ -740,14 +740,14 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
           </div>
 
           <StatGrid stats={[
-            { label: "Impresiones",   value: fmtN(story.impressions) },
-            { label: "Alcance",       value: fmtN(story.reach) },
-            { label: "Engagement",    value: `${engRate}%` },
-            { label: "Respuestas",    value: fmtN(story.replies) },
-            { label: "Salidas",       value: fmtN(story.exits) },
-            { label: "Taps adelante", value: fmtN(story.taps_forward) },
-            { label: "Taps atrás",    value: fmtN(story.taps_back) },
-            { label: "Compartidos",   value: fmtN(story.shares) },
+            { label: "Impresiones",    value: fmtN(story.impressions) },
+            { label: "Alcance",        value: fmtN(story.reach) },
+            { label: "Completion Rate", value: `${rate}%` },
+            { label: "Engagement",     value: `${engRate}%` },
+            { label: "Respuestas",     value: fmtN(story.replies) },
+            { label: "Salidas",        value: fmtN(story.exits) },
+            { label: "Taps adelante",  value: fmtN(story.taps_forward) },
+            { label: "Taps atrás",     value: fmtN(story.taps_back) },
           ]} />
         </div>
       </DialogContent>
@@ -789,7 +789,8 @@ function Pagination({ page, total, pageSize, onChange }: {
 const PREVIEW   = 6;   // items shown in summary view
 const PAGE_SIZE = 12;  // items per page in expanded view
 
-export default function ContentSection({ clientId }: { clientId: string | null }) {
+export default function ContentSection({ clientId, clientName = "" }: { clientId: string | null; clientName?: string }) {
+  const isBotanico = clientName.toLowerCase().includes("botanico") || clientName.toLowerCase().includes("botánico");
   const [posts,           setPosts]           = useState<Post[]>([]);
   const [stories,         setStories]         = useState<Story[]>([]);
   const [loadingPosts,    setLoadingPosts]    = useState(true);
@@ -956,11 +957,15 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         {loadingStories ? (
           <div className="text-center py-8 text-gray-300 text-sm">Cargando...</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {(stories.length > 0 ? stories : MOCK_STORIES).slice(0, PREVIEW).map((story) => (
-              <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
-            ))}
-          </div>
+          {stories.length === 0 && !isBotanico ? (
+            <div className="text-center py-8 text-gray-300 text-sm">No hay stories registradas todavía.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {(stories.length > 0 ? stories : MOCK_STORIES).slice(0, PREVIEW).map((story) => (
+                <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
+              ))}
+            </div>
+          )}
         )}
       </div>
 

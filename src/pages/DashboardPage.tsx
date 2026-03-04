@@ -659,7 +659,7 @@ export default function DashboardPage({ session }: { session: Session }) {
           {/* ── CONTENIDO TAB ─────────────────────────────────────────────────── */}
           {activeNav === "reels" && (
             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <ContentSection clientId={selectedClientId} />
+              <ContentSection clientId={selectedClientId} clientName={clientName} />
             </div>
           )}
 
