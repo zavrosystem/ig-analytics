@@ -956,16 +956,14 @@ export default function ContentSection({ clientId, clientName = "" }: { clientId
         </div>
         {loadingStories ? (
           <div className="text-center py-8 text-gray-300 text-sm">Cargando...</div>
+        ) : stories.length === 0 && !isBotanico ? (
+          <div className="text-center py-8 text-gray-300 text-sm">No hay stories registradas todavía.</div>
         ) : (
-          {stories.length === 0 && !isBotanico ? (
-            <div className="text-center py-8 text-gray-300 text-sm">No hay stories registradas todavía.</div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {(stories.length > 0 ? stories : MOCK_STORIES).slice(0, PREVIEW).map((story) => (
-                <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {(stories.length > 0 ? stories : MOCK_STORIES).slice(0, PREVIEW).map((story) => (
+              <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
+            ))}
+          </div>
         )}
       </div>
 
