@@ -68,6 +68,58 @@ interface Story {
   duration_ms: number | null;
 }
 
+// ── Mock Stories (shown as placeholder until real pipeline data arrives) ────────
+const MOCK_STORIES: Story[] = [
+  {
+    id: "ms1", story_id: "ms1",
+    caption: "Tip del día: publica en tus mejores horas",
+    posted_at: "2026-02-17T12:00:00Z",
+    thumbnail_url: null,
+    impressions: 4200, reach: 3900, replies: 47, exits: 420,
+    taps_forward: 310, taps_back: 180, duration_ms: 7000,
+  },
+  {
+    id: "ms2", story_id: "ms2",
+    caption: "Detrás de cámaras de nuestra última producción",
+    posted_at: "2026-02-15T18:00:00Z",
+    thumbnail_url: null,
+    impressions: 3800, reach: 3500, replies: 62, exits: 950,
+    taps_forward: 520, taps_back: 95, duration_ms: 15000,
+  },
+  {
+    id: "ms3", story_id: "ms3",
+    caption: "Encuesta: ¿qué contenido quieres ver esta semana?",
+    posted_at: "2026-02-13T09:00:00Z",
+    thumbnail_url: null,
+    impressions: 5100, reach: 4800, replies: 234, exits: 306,
+    taps_forward: 198, taps_back: 412, duration_ms: 8000,
+  },
+  {
+    id: "ms4", story_id: "ms4",
+    caption: "Nuevo reel disponible — guárdalo antes de que desaparezca",
+    posted_at: "2026-02-11T15:00:00Z",
+    thumbnail_url: null,
+    impressions: 2900, reach: 2700, replies: 18, exits: 290,
+    taps_forward: 180, taps_back: 45, duration_ms: 6000,
+  },
+  {
+    id: "ms5", story_id: "ms5",
+    caption: "¿Ya conoces nuestra nueva oferta? Desliza arriba",
+    posted_at: "2026-02-09T11:00:00Z",
+    thumbnail_url: null,
+    impressions: 6200, reach: 5800, replies: 89, exits: 620,
+    taps_forward: 410, taps_back: 130, duration_ms: 10000,
+  },
+  {
+    id: "ms6", story_id: "ms6",
+    caption: "Resultados de la semana — números que nos hacen crecer",
+    posted_at: "2026-02-07T20:00:00Z",
+    thumbnail_url: null,
+    impressions: 3400, reach: 3100, replies: 41, exits: 340,
+    taps_forward: 260, taps_back: 80, duration_ms: 12000,
+  },
+];
+
 // ── Mock Reels ─────────────────────────────────────────────────────────────────
 const MOCK_REELS: Reel[] = [
   {
@@ -903,11 +955,9 @@ export default function ContentSection({ clientId }: { clientId: string | null }
         </div>
         {loadingStories ? (
           <div className="text-center py-8 text-gray-300 text-sm">Cargando...</div>
-        ) : stories.length === 0 ? (
-          <div className="text-center py-8 text-gray-300 text-sm">No hay stories registradas todavía. El pipeline las cargará pronto.</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-            {stories.slice(0, PREVIEW).map((story) => (
+            {(stories.length > 0 ? stories : MOCK_STORIES).slice(0, PREVIEW).map((story) => (
               <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
             ))}
           </div>
