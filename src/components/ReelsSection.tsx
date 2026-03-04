@@ -65,6 +65,7 @@ interface Story {
   exits: number;
   taps_forward: number;
   taps_back: number;
+  link_clicks: number;
   duration_ms: number | null;
 }
 
@@ -76,7 +77,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-17T12:00:00Z",
     thumbnail_url: null,
     impressions: 4200, reach: 3900, replies: 47, exits: 420,
-    taps_forward: 310, taps_back: 180, duration_ms: 7000,
+    taps_forward: 310, taps_back: 180, link_clicks: 0, duration_ms: 7000,
   },
   {
     id: "ms2", story_id: "ms2",
@@ -84,7 +85,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-15T18:00:00Z",
     thumbnail_url: null,
     impressions: 3800, reach: 3500, replies: 62, exits: 950,
-    taps_forward: 520, taps_back: 95, duration_ms: 15000,
+    taps_forward: 520, taps_back: 95, link_clicks: 284, duration_ms: 15000,
   },
   {
     id: "ms3", story_id: "ms3",
@@ -92,7 +93,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-13T09:00:00Z",
     thumbnail_url: null,
     impressions: 5100, reach: 4800, replies: 234, exits: 306,
-    taps_forward: 198, taps_back: 412, duration_ms: 8000,
+    taps_forward: 198, taps_back: 412, link_clicks: 0, duration_ms: 8000,
   },
   {
     id: "ms4", story_id: "ms4",
@@ -100,7 +101,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-11T15:00:00Z",
     thumbnail_url: null,
     impressions: 2900, reach: 2700, replies: 18, exits: 290,
-    taps_forward: 180, taps_back: 45, duration_ms: 6000,
+    taps_forward: 180, taps_back: 45, link_clicks: 97, duration_ms: 6000,
   },
   {
     id: "ms5", story_id: "ms5",
@@ -108,7 +109,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-09T11:00:00Z",
     thumbnail_url: null,
     impressions: 6200, reach: 5800, replies: 89, exits: 620,
-    taps_forward: 410, taps_back: 130, duration_ms: 10000,
+    taps_forward: 410, taps_back: 130, link_clicks: 512, duration_ms: 10000,
   },
   {
     id: "ms6", story_id: "ms6",
@@ -116,7 +117,7 @@ const MOCK_STORIES: Story[] = [
     posted_at: "2026-02-07T20:00:00Z",
     thumbnail_url: null,
     impressions: 3400, reach: 3100, replies: 41, exits: 340,
-    taps_forward: 260, taps_back: 80, duration_ms: 12000,
+    taps_forward: 260, taps_back: 80, link_clicks: 188, duration_ms: 12000,
   },
 ];
 
@@ -744,6 +745,7 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
             { label: "Salidas",          value: fmtN(story.exits) },
             { label: "Taps adelante",    value: fmtN(story.taps_forward) },
             { label: "Taps atrás",       value: fmtN(story.taps_back) },
+            ...(story.link_clicks > 0 ? [{ label: "Link Clicks (Swipe Up)", value: fmtN(story.link_clicks) }] : []),
           ]} />
         </div>
       </DialogContent>
@@ -817,7 +819,7 @@ export default function ContentSection({ clientId, clientName = "" }: { clientId
     if (!clientId) { setLoadingStories(false); return; }
     supabase
       .from("stories")
-      .select("id, story_id, caption, posted_at, thumbnail_url, impressions, reach, exits, replies, taps_forward, taps_back, duration_ms")
+      .select("id, story_id, caption, posted_at, thumbnail_url, impressions, reach, exits, replies, taps_forward, taps_back, link_clicks, duration_ms")
       .eq("client_id", clientId)
       .order("posted_at", { ascending: false })
       .limit(50)
