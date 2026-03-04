@@ -561,9 +561,9 @@ function ReelDetail({ reel, onClose }: { reel: Reel; onClose: () => void }) {
           <DialogTitle className="text-gray-900 text-base font-semibold">Detalle del Reel</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pb-2">
-          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: reel.gradient }}>
-            <p>{reel.caption}</p>
-            <p className="text-white/50 text-xs">{format(new Date(reel.posted_at), "d 'de' MMMM yyyy", { locale: es })}</p>
+          <div className="rounded-xl p-4 text-sm bg-gray-50 leading-relaxed space-y-1">
+            <p className="text-gray-800">{reel.caption || <span className="italic text-gray-400">Sin caption</span>}</p>
+            <p className="text-gray-400 text-xs">{format(new Date(reel.posted_at), "d 'de' MMMM yyyy", { locale: es })}</p>
           </div>
 
           <RateBar rate={rate} label="Hook Rate" />
@@ -675,9 +675,9 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
           <DialogTitle className="text-gray-900 text-base font-semibold">Detalle de Story</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pb-2">
-          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: story.gradient }}>
-            <p>{story.caption}</p>
-            <p className="text-white/50 text-xs">{format(new Date(story.posted_at), "d 'de' MMMM yyyy", { locale: es })}</p>
+          <div className="rounded-xl p-4 text-sm bg-gray-50 leading-relaxed space-y-1">
+            <p className="text-gray-800">{story.caption || <span className="italic text-gray-400">Sin caption</span>}</p>
+            <p className="text-gray-400 text-xs">{format(new Date(story.posted_at), "d 'de' MMMM yyyy", { locale: es })}</p>
           </div>
 
           <RateBar rate={rate} label="Completion Rate" />
