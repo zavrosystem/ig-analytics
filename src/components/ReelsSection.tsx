@@ -480,10 +480,10 @@ function PostDetail({ post, index, onClose }: { post: Post; index: number; onClo
         </DialogHeader>
         <div className="space-y-4 pb-2">
 
-          <div className="rounded-xl p-4 text-sm text-white/90 leading-relaxed space-y-1" style={{ background: gradient }}>
-            <p>{post.caption || <span className="italic opacity-60">Sin caption</span>}</p>
+          <div className="rounded-xl p-4 text-sm bg-gray-50 leading-relaxed space-y-1">
+            <p className="text-gray-800">{post.caption || <span className="italic text-gray-400">Sin caption</span>}</p>
             {post.posted_at && (
-              <p className="text-white/50 text-xs">
+              <p className="text-gray-400 text-xs">
                 {format(new Date(post.posted_at), "d 'de' MMMM yyyy", { locale: es })}
               </p>
             )}
