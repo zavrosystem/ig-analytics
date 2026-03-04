@@ -445,13 +445,10 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
           {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
           <MetricSection title="Calidad de audiencia">
             <MetricRow label="New Audience Penetration"    value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="% del alcance proveniente de no seguidores" />
-            <MetricRow label="Qualified Engagement Rate"   value={post.qualified_engagement_rate != null ? post.qualified_engagement_rate.toFixed(2) + "%" : "--"} tooltip="% de interacciones provenientes de no seguidores" />
           </MetricSection>
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
           <MetricSection title="Conversión">
-            <MetricRow label="Follower Conversion Rate"       value={pct(post.follows, post.reach)}                tooltip="Nuevos seguidores / Cuentas alcanzadas" />
-            <MetricRow label="Engagement to Follow Ratio"     value={pct(post.follows, totalEng)}                  tooltip="Nuevos seguidores / Total interacciones" />
             <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares, post.reach)}                  tooltip="Compartidos / Cuentas alcanzadas" />
             <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.shares, denominator)}   tooltip={`Compartidos / ${denominatorLabel}`} />
             <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, denominator)} tooltip={`(Comentarios + Guardados) / ${denominatorLabel}`} />
