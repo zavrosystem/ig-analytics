@@ -689,9 +689,12 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
 }
 
 function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) {
-  const rate    = getCompletionRate(story);
-  const engRate = story.reach > 0 ? Math.round((story.replies / story.reach) * 1000) / 10 : 0;
-  const curve   = storyDropoffCurve(story.exits, story.impressions, story.duration_ms);
+  const rate          = getCompletionRate(story);
+  const engRate       = story.reach > 0 ? Math.round((story.replies / story.reach) * 1000) / 10 : 0;
+  const linkRate      = story.impressions > 0 && story.link_clicks > 0
+    ? Math.round(story.link_clicks / story.impressions * 100)
+    : null;
+  const curve         = storyDropoffCurve(story.exits, story.impressions, story.duration_ms);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -706,6 +709,10 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
           </div>
 
           <RateBar rate={rate} label="Completion Rate" />
+
+          {linkRate !== null && (
+            <RateBar rate={linkRate} label="Link Click Rate (Swipe Up)" />
+          )}
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
             <Clock className="w-3 h-3" />
