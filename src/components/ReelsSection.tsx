@@ -55,17 +55,17 @@ interface Reel {
 
 interface Story {
   id: string;
-  caption: string;
+  story_id: string;
+  caption: string | null;
   posted_at: string;
+  thumbnail_url: string | null;
   impressions: number;
   reach: number;
   replies: number;
   exits: number;
   taps_forward: number;
   taps_back: number;
-  shares: number;
-  duration_ms: number;
-  gradient: string;
+  duration_ms: number | null;
 }
 
 // ── Mock Reels ─────────────────────────────────────────────────────────────────
@@ -96,33 +96,6 @@ const MOCK_REELS: Reel[] = [
   },
 ];
 
-// ── Mock Stories ───────────────────────────────────────────────────────────────
-const MOCK_STORIES: Story[] = [
-  {
-    id: "s1",
-    caption: "Tip del día: publica en tus mejores horas",
-    posted_at: "2026-02-17",
-    impressions: 4200, reach: 3900, replies: 47, exits: 420,
-    taps_forward: 310, taps_back: 180, shares: 89, duration_ms: 7000,
-    gradient: "linear-gradient(160deg, #FF7200 0%, #7A2E00 100%)",
-  },
-  {
-    id: "s2",
-    caption: "Detrás de cámaras de nuestra última producción",
-    posted_at: "2026-02-15",
-    impressions: 3800, reach: 3500, replies: 62, exits: 950,
-    taps_forward: 520, taps_back: 95, shares: 34, duration_ms: 15000,
-    gradient: "linear-gradient(160deg, #B45309 0%, #3B1A04 100%)",
-  },
-  {
-    id: "s3",
-    caption: "Encuesta: ¿qué contenido quieres ver esta semana?",
-    posted_at: "2026-02-13",
-    impressions: 5100, reach: 4800, replies: 234, exits: 306,
-    taps_forward: 198, taps_back: 412, shares: 156, duration_ms: 8000,
-    gradient: "linear-gradient(160deg, #F59E0B 0%, #92400E 100%)",
-  },
-];
 
 // ── Shared Helpers ─────────────────────────────────────────────────────────────
 function rateColor(rate: number) {
@@ -616,7 +589,8 @@ function getCompletionRate(s: Story) {
   return Math.round((1 - s.exits / s.impressions) * 100);
 }
 
-function storyDropoffCurve(exits: number, impressions: number, durMs: number) {
+function storyDropoffCurve(exits: number, impressions: number, durMs: number | null) {
+  if (!durMs || durMs <= 0) return [];
   const completionRate = 1 - exits / impressions;
   const dur = durMs / 1000;
   const steps = 20;
@@ -636,10 +610,12 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
       onClick={onClick}
       className="text-left group bg-white border border-gray-100 rounded-xl overflow-hidden hover:border-[#FF7200]/40 hover:shadow-md hover:scale-[1.02] transition-all duration-200"
     >
-      <div className="relative h-36 w-full flex items-center justify-center" style={{ background: story.gradient }}>
-        <div className="w-10 h-10 rounded-full border-2 border-white/60 flex items-center justify-center">
-          <Eye className="w-4 h-4 text-white" />
-        </div>
+      <div className="relative h-36 w-full flex items-center justify-center bg-gray-100 overflow-hidden">
+        {story.thumbnail_url
+          ? <img src={story.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          : <Eye className="w-8 h-8 text-gray-300" />
+        }
+        <div className="absolute inset-0 bg-black/25" />
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-bold"
           style={{ backgroundColor: color + "33", color, border: `1px solid ${color}55` }}>
           {rate}%
@@ -647,12 +623,14 @@ function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
         <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white/90 text-xs font-medium drop-shadow">
           <Eye className="w-3 h-3" />{fmtN(story.impressions)}
         </div>
-        <div className="absolute bottom-2 right-2 text-white/70 text-[10px] font-medium drop-shadow">
-          {fmtMs(story.duration_ms)}
-        </div>
+        {story.duration_ms && (
+          <div className="absolute bottom-2 right-2 text-white/70 text-[10px] font-medium drop-shadow">
+            {fmtMs(story.duration_ms)}
+          </div>
+        )}
       </div>
       <div className="p-3 space-y-2">
-        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{story.caption}</p>
+        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{story.caption || <span className="italic text-gray-300">Story</span>}</p>
         <div className="flex items-center justify-between text-xs text-gray-400">
           <span className="flex items-center gap-1"><Share2 className="w-3 h-3" />{fmtN(story.replies)}</span>
           <span className="flex items-center gap-1"><ChevronRight className="w-3 h-3" />{fmtN(story.taps_forward)}</span>
@@ -761,7 +739,9 @@ const PAGE_SIZE = 12;  // items per page in expanded view
 
 export default function ContentSection({ clientId }: { clientId: string | null }) {
   const [posts,           setPosts]           = useState<Post[]>([]);
+  const [stories,         setStories]         = useState<Story[]>([]);
   const [loadingPosts,    setLoadingPosts]    = useState(true);
+  const [loadingStories,  setLoadingStories]  = useState(true);
   const [selectedPost,    setSelectedPost]    = useState<{ post: Post; index: number } | null>(null);
   const [selectedVideo,   setSelectedVideo]   = useState<{ post: Post; index: number } | null>(null);
   const [selectedReel,    setSelectedReel]    = useState<Reel  | null>(null);
@@ -781,6 +761,20 @@ export default function ContentSection({ clientId }: { clientId: string | null }
       .then(({ data }) => {
         setPosts((data as Post[]) ?? []);
         setLoadingPosts(false);
+      });
+  }, [clientId]);
+
+  useEffect(() => {
+    if (!clientId) { setLoadingStories(false); return; }
+    supabase
+      .from("stories")
+      .select("id, story_id, caption, posted_at, thumbnail_url, impressions, reach, exits, replies, taps_forward, taps_back, duration_ms")
+      .eq("client_id", clientId)
+      .order("posted_at", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        setStories((data as Story[]) ?? []);
+        setLoadingStories(false);
       });
   }, [clientId]);
 
@@ -903,10 +897,21 @@ export default function ContentSection({ clientId }: { clientId: string | null }
 
       {/* Stories */}
       <div className="space-y-4">
-        <div>
+        <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800">Stories</h2>
+          {!loadingStories && <span className="text-xs text-gray-400">{stories.length} stories</span>}
         </div>
-        <div className="text-center py-8 text-gray-300 text-sm">No hay contenido</div>
+        {loadingStories ? (
+          <div className="text-center py-8 text-gray-300 text-sm">Cargando...</div>
+        ) : stories.length === 0 ? (
+          <div className="text-center py-8 text-gray-300 text-sm">No hay stories registradas todavía. El pipeline las cargará pronto.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {stories.slice(0, PREVIEW).map((story) => (
+              <StoryCard key={story.id} story={story} onClick={() => setSelectedStory(story)} />
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedPost  && <PostDetail      post={selectedPost.post}   index={selectedPost.index}   onClose={() => setSelectedPost(null)}  />}
