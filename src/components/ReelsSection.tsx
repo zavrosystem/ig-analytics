@@ -655,8 +655,6 @@ function storyDropoffCurve(exits: number, impressions: number, durMs: number | n
 }
 
 function StoryCard({ story, onClick }: { story: Story; onClick: () => void }) {
-  const rate  = getCompletionRate(story);
-  const color = rateColor(rate);
   return (
     <button
       onClick={onClick}
@@ -710,40 +708,42 @@ function StoryDetail({ story, onClose }: { story: Story; onClose: () => void }) 
 
           <div className="text-xs text-gray-400 flex items-center gap-1 -mt-1 px-1">
             <Clock className="w-3 h-3" />
-            {story.duration_ms ? `Duración: ${fmtMs(story.duration_ms)} · ` : ""}{fmtN(story.exits)} salidas de {fmtN(story.impressions)} impresiones
+            {fmtN(story.exits)} salidas de {fmtN(story.impressions)} impresiones
           </div>
 
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de abandono estimada</p>
-            <p className="text-[10px] text-gray-400">Simulada a partir del ratio de salidas</p>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <ResponsiveContainer width="100%" height={150}>
-                <AreaChart data={curve} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="storyFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#FF7200" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                  <XAxis dataKey="time" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} />
-                  <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="Retención" stroke="#FF7200" strokeWidth={2} fill="url(#storyFill)" dot={false} activeDot={{ r: 4, fill: "#FF7200" }} />
-                </AreaChart>
-              </ResponsiveContainer>
+          {curve.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-700 uppercase tracking-widest">Curva de abandono estimada</p>
+              <p className="text-[10px] text-gray-400">Simulada a partir del ratio de salidas</p>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <ResponsiveContainer width="100%" height={150}>
+                  <AreaChart data={curve} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="storyFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%"  stopColor="#FF7200" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#FF7200" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis dataKey="time" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} />
+                    <YAxis tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Area type="monotone" dataKey="Retención" stroke="#FF7200" strokeWidth={2} fill="url(#storyFill)" dot={false} activeDot={{ r: 4, fill: "#FF7200" }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
+          )}
 
           <StatGrid stats={[
-            { label: "Impresiones",    value: fmtN(story.impressions) },
-            { label: "Alcance",        value: fmtN(story.reach) },
-            { label: "Completion Rate", value: `${rate}%` },
-            { label: "Engagement",     value: `${engRate}%` },
-            { label: "Respuestas",     value: fmtN(story.replies) },
-            { label: "Salidas",        value: fmtN(story.exits) },
-            { label: "Taps adelante",  value: fmtN(story.taps_forward) },
-            { label: "Taps atrás",     value: fmtN(story.taps_back) },
+            { label: "Impresiones",      value: fmtN(story.impressions) },
+            { label: "Alcance",          value: fmtN(story.reach) },
+            { label: "Completion Rate",  value: `${rate}%` },
+            { label: "Tasa de respuesta", value: `${engRate}%` },
+            { label: "Respuestas",       value: fmtN(story.replies) },
+            { label: "Salidas",          value: fmtN(story.exits) },
+            { label: "Taps adelante",    value: fmtN(story.taps_forward) },
+            { label: "Taps atrás",       value: fmtN(story.taps_back) },
           ]} />
         </div>
       </DialogContent>
