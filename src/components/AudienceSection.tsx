@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,24 +102,41 @@ function Skeleton() {
 
 // ── World Map ────────────────────────────────────────────────────────────────
 function WorldMap({ countries }: { countries: Record<string, number> }) {
-  const max = Math.max(...Object.values(countries), 1);
+  const max          = Math.max(...Object.values(countries), 1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const MAP_H        = 300; // fixed height target
+
+  // Scale computed so the world always fills the container width
+  const [mapWidth, setMapWidth] = useState(800);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setMapWidth(el.clientWidth));
+    ro.observe(el);
+    setMapWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+
+  // scale so the world fills the width with small margin; cap so it fits height too
+  const scaleByWidth  = mapWidth * 0.148;
+  const scaleByHeight = MAP_H   * 0.50;
+  const scale         = Math.min(scaleByWidth, scaleByHeight);
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Distribución geográfica</p>
-      {/* aspect-ratio matches the SVG viewBox so the map always fills with margins on all sides */}
-      <div style={{ aspectRatio: "800/340", width: "100%" }}>
+      <div ref={containerRef} style={{ height: MAP_H, overflow: "hidden" }}>
         <ComposableMap
           projection="geoNaturalEarth1"
-          projectionConfig={{ scale: 125, translateX: 400, translateY: 175 }}
-          width={800}
-          height={340}
-          style={{ width: "100%", height: "auto", display: "block" }}
+          projectionConfig={{ scale, translateX: mapWidth / 2, translateY: MAP_H / 2 }}
+          width={mapWidth}
+          height={MAP_H}
+          style={{ width: "100%", height: "100%", display: "block" }}
         >
           <Geographies geography={GEO_URL}>
             {({ geographies }) =>
               geographies
-                .filter(geo => Number(geo.id) !== 10) // quitar Antártida
+                .filter(geo => Number(geo.id) !== 10)
                 .map((geo) => {
                   const numId = String(geo.id).padStart(3, "0");
                   const a2    = NUM_TO_A2[numId];
