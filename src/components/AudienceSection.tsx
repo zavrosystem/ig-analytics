@@ -112,51 +112,51 @@ function GeoSection({ countries, cities }: { countries: Record<string, number>; 
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-5">
-        Distribución geográfica
-      </p>
+    <div className="flex gap-4 items-stretch">
 
-      <div className="flex gap-6 items-start">
-        {/* Map — takes most of the space */}
-        <div className="flex-1 min-w-0">
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{ scale: 140, center: [0, 35] }}
-            className="w-full h-auto"
-            style={{ maxHeight: 440, display: "block" }}
-          >
-            <Geographies geography={GEO_URL}>
-              {({ geographies }) =>
-                geographies
-                  .filter(geo => geo.id !== "010")
-                  .map(geo => {
-                    const numId = String(geo.id).padStart(3, "0");
-                    const a2    = NUM_TO_A2[numId];
-                    const val   = a2 ? (countries[a2] ?? 0) : 0;
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill={getFill(val)}
-                        stroke="#fff"
-                        strokeWidth={0.5}
-                        style={{
-                          default: { outline: "none" },
-                          hover:   { outline: "none", opacity: 0.8 },
-                          pressed: { outline: "none" },
-                        }}
-                      />
-                    );
-                  })
-              }
-            </Geographies>
-          </ComposableMap>
-        </div>
+      {/* Map card — left */}
+      <div className="flex-1 min-w-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+          Distribución geográfica
+        </p>
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{ scale: 140, center: [0, 35] }}
+          className="w-full h-auto"
+          style={{ maxHeight: 440, display: "block" }}
+        >
+          <Geographies geography={GEO_URL}>
+            {({ geographies }) =>
+              geographies
+                .filter(geo => geo.id !== "010")
+                .map(geo => {
+                  const numId = String(geo.id).padStart(3, "0");
+                  const a2    = NUM_TO_A2[numId];
+                  const val   = a2 ? (countries[a2] ?? 0) : 0;
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={getFill(val)}
+                      stroke="#fff"
+                      strokeWidth={0.5}
+                      style={{
+                        default: { outline: "none" },
+                        hover:   { outline: "none", opacity: 0.8 },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  );
+                })
+            }
+          </Geographies>
+        </ComposableMap>
+      </div>
 
-        {/* Top cities */}
-        <div className="w-48 shrink-0 space-y-3 pt-1">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Top ciudades</p>
+      {/* Cities card — right */}
+      <div className="w-52 shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Top ciudades</p>
+        <div className="space-y-3">
           {topCities.map(([key, val], idx) => {
             const pct = Math.round(val / citiesTotal * 100);
             return (
@@ -176,6 +176,7 @@ function GeoSection({ countries, cities }: { countries: Record<string, number>; 
           })}
         </div>
       </div>
+
     </div>
   );
 }
@@ -272,38 +273,6 @@ function GenderChart({ genderAge }: { genderAge: Record<string, number> }) {
           <span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />
           Hombres · {mPct}%
         </span>
-      </div>
-    </div>
-  );
-}
-
-// ── Cities list ───────────────────────────────────────────────────────────────
-function CitiesList({ cities }: { cities: Record<string, number> }) {
-  const total   = Object.values(cities).reduce((s, v) => s + v, 0) || 1;
-  const entries = Object.entries(cities).sort(([,a],[,b]) => b - a).slice(0, 8);
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Top ciudades</p>
-      <div className="space-y-2.5">
-        {entries.map(([key, val], idx) => {
-          const pct = Math.round(val / total * 100);
-          return (
-            <div key={key} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-700 font-medium truncate max-w-[70%]">{key}</span>
-                <span className="text-gray-400 tabular-nums">{pct}% · {fmtN(val)}</span>
-              </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, transitionDelay: `${idx * 40}ms` }}
-                />
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
