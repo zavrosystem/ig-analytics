@@ -115,10 +115,8 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
         Distribución geográfica
       </p>
       <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{ scale: 118, center: [-10, 35] }}
-        width={1600}
-        height={600}
+        projection="geoNaturalEarth1"
+        projectionConfig={{ scale: 147, center: [0, 20] }}
         className="w-full h-auto"
         style={{ display: "block" }}
       >
