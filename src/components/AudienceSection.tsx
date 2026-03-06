@@ -105,13 +105,13 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
   const max = Math.max(...Object.values(countries), 1);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm overflow-hidden">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Distribución geográfica</p>
       <ComposableMap
         projection="geoMercator"
-        projectionConfig={{ scale: 130, center: [10, 20] }}
-        style={{ width: "100%", height: "auto" }}
-        height={280}
+        projectionConfig={{ scale: 120, center: [15, 15] }}
+        viewBox="0 0 800 380"
+        style={{ width: "100%", height: "auto", display: "block" }}
       >
         <Geographies geography={GEO_URL}>
           {({ geographies }) =>
@@ -198,7 +198,7 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
   );
 }
 
-// ── Gender Bar ───────────────────────────────────────────────────────────────
+// ── Gender Chart ─────────────────────────────────────────────────────────────
 function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
   const female = Object.entries(genderAge).filter(([k]) => k.startsWith("F.")).reduce((s, [,v]) => s + v, 0);
   const male   = Object.entries(genderAge).filter(([k]) => k.startsWith("M.")).reduce((s, [,v]) => s + v, 0);
@@ -206,37 +206,38 @@ function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
   const fPct   = Math.round(female / total * 100);
   const mPct   = 100 - fPct;
 
+  const data = [
+    { label: "Mujeres", value: female, pct: fPct, fill: "#F9A8D4" },
+    { label: "Hombres", value: male,   pct: mPct, fill: "#93C5FD" },
+  ];
+
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Género</p>
-
-      {/* Big numbers */}
-      <div className="flex justify-between items-end">
-        <div>
-          <p className="text-2xl font-bold text-pink-400 leading-none">{fPct}%</p>
-          <p className="text-[10px] text-gray-400 mt-1">Mujeres</p>
-        </div>
-        <div className="text-right">
-          <p className="text-2xl font-bold text-blue-400 leading-none">{mPct}%</p>
-          <p className="text-[10px] text-gray-400 mt-1">Hombres</p>
-        </div>
-      </div>
-
-      {/* Split bar */}
-      <div className="h-3 rounded-full overflow-hidden flex">
-        <div className="h-full bg-pink-300 transition-all duration-700" style={{ width: `${fPct}%` }} />
-        <div className="h-full bg-blue-300 flex-1" />
-      </div>
-
-      {/* Counts */}
-      <div className="flex justify-between text-xs text-gray-400">
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="40%">
+          <XAxis dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
+          <Tooltip
+            formatter={(v: number, _: string, entry: any) => [fmtN(v), entry.payload.label]}
+            contentStyle={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 10, fontSize: 11, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
+          />
+          <Bar dataKey="value" radius={[6,6,0,0]} isAnimationActive animationDuration={550}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.fill} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      <div className="flex justify-between text-xs text-gray-400 pt-1">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-pink-300 inline-block" />
-          {fmtN(female)}
+          Mujeres · {fPct}%
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />
-          {fmtN(male)}
+          Hombres · {mPct}%
         </span>
       </div>
     </div>
