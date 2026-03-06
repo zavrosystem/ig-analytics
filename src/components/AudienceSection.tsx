@@ -110,7 +110,7 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
   };
 
   return (
-    <div className="w-[47%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+    <div className="w-[42%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
         Distribución geográfica
       </p>
