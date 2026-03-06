@@ -65,22 +65,53 @@ function fmtN(n: number) {
   return n.toLocaleString("es");
 }
 
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+function Skeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+        <div className="h-3 w-32 bg-gray-100 rounded mb-4" />
+        <div className="h-[260px] bg-gray-50 rounded-xl" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="h-3 w-36 bg-gray-100 rounded" />
+          <div className="h-[200px] bg-gray-50 rounded-xl" />
+        </div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="h-3 w-16 bg-gray-100 rounded" />
+          <div className="h-3 w-full bg-gray-100 rounded-full" />
+          <div className="space-y-2">
+            <div className="h-3 w-48 bg-gray-100 rounded" />
+            <div className="h-3 w-48 bg-gray-100 rounded" />
+          </div>
+        </div>
+      </div>
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
+        <div className="h-3 w-24 bg-gray-100 rounded" />
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="space-y-1.5">
+            <div className="h-2.5 bg-gray-100 rounded" style={{ width: `${80 - i * 10}%` }} />
+            <div className="h-1.5 bg-gray-50 rounded-full w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── World Map ────────────────────────────────────────────────────────────────
 function WorldMap({ countries }: { countries: Record<string, number> }) {
-  const max    = Math.max(...Object.values(countries), 1);
-  const a2Set  = new Set(Object.keys(countries));
-
-  // Convert alpha-2 codes to numeric for lookup
-  const a2ToNum = Object.fromEntries(Object.entries(NUM_TO_A2).map(([n, a]) => [a, n]));
+  const max = Math.max(...Object.values(countries), 1);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Distribución geográfica</p>
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ scale: 130, center: [10, 20] }}
         style={{ width: "100%", height: "auto" }}
-        height={300}
+        height={280}
       >
         <Geographies geography={GEO_URL}>
           {({ geographies }) =>
@@ -91,7 +122,7 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
               const pct   = val / max;
               const fill  = val > 0
                 ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
-                : "#E5E7EB";
+                : "#F3F4F6";
               return (
                 <Geography
                   key={geo.rsmKey}
@@ -101,7 +132,7 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
                   strokeWidth={0.5}
                   style={{
                     default:  { outline: "none" },
-                    hover:    { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#D1D5DB", outline: "none" },
+                    hover:    { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#E5E7EB", outline: "none", cursor: val > 0 ? "pointer" : "default" },
                     pressed:  { outline: "none" },
                   }}
                 />
@@ -125,14 +156,14 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
   });
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Distribución por edad</p>
         <button
           onClick={() => setByGender(b => !b)}
-          className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all ${
+          className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-200 ${
             byGender
-              ? "bg-[#FF7200] text-white"
+              ? "bg-[#FF7200] text-white shadow-sm"
               : "bg-gray-100 text-gray-400 hover:bg-gray-200"
           }`}
         >
@@ -145,18 +176,19 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
           <YAxis tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
           <Tooltip
             formatter={(v: number, name: string) => [fmtN(v), name]}
-            contentStyle={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 8, fontSize: 11 }}
+            contentStyle={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 10, fontSize: 11, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+            cursor={{ fill: "rgba(0,0,0,0.03)" }}
           />
           {byGender ? (
             <>
               <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
-              <Bar dataKey="Mujeres" stackId="a" fill="#F9A8D4" radius={[0,0,0,0]} />
-              <Bar dataKey="Hombres" stackId="a" fill="#93C5FD" radius={[4,4,0,0]} />
+              <Bar dataKey="Mujeres" stackId="a" fill="#F9A8D4" radius={[0,0,0,0]} isAnimationActive animationDuration={450} />
+              <Bar dataKey="Hombres" stackId="a" fill="#93C5FD" radius={[4,4,0,0]} isAnimationActive animationDuration={450} />
             </>
           ) : (
-            <Bar dataKey="Total" radius={[4,4,0,0]}>
+            <Bar dataKey="Total" radius={[4,4,0,0]} isAnimationActive animationDuration={550}>
               {data.map((_, i) => (
-                <Cell key={i} fill="#FF7200" fillOpacity={0.7 + (i / data.length) * 0.3} />
+                <Cell key={i} fill="#FF7200" fillOpacity={0.55 + (i / data.length) * 0.45} />
               ))}
             </Bar>
           )}
@@ -175,19 +207,37 @@ function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
   const mPct   = 100 - fPct;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Género</p>
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-pink-400 w-8 text-right">{fPct}%</span>
-        <div className="flex-1 h-3 rounded-full overflow-hidden flex">
-          <div className="h-full bg-pink-300 transition-all" style={{ width: `${fPct}%` }} />
-          <div className="h-full bg-blue-300 flex-1" />
+
+      {/* Big numbers */}
+      <div className="flex justify-between items-end">
+        <div>
+          <p className="text-2xl font-bold text-pink-400 leading-none">{fPct}%</p>
+          <p className="text-[10px] text-gray-400 mt-1">Mujeres</p>
         </div>
-        <span className="text-xs font-semibold text-blue-400 w-8">{mPct}%</span>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-blue-400 leading-none">{mPct}%</p>
+          <p className="text-[10px] text-gray-400 mt-1">Hombres</p>
+        </div>
       </div>
+
+      {/* Split bar */}
+      <div className="h-3 rounded-full overflow-hidden flex">
+        <div className="h-full bg-pink-300 transition-all duration-700" style={{ width: `${fPct}%` }} />
+        <div className="h-full bg-blue-300 flex-1" />
+      </div>
+
+      {/* Counts */}
       <div className="flex justify-between text-xs text-gray-400">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-pink-300 inline-block" /> Mujeres · {fmtN(female)}</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-300 inline-block" /> Hombres · {fmtN(male)}</span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-pink-300 inline-block" />
+          {fmtN(female)}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />
+          {fmtN(male)}
+        </span>
       </div>
     </div>
   );
@@ -204,20 +254,23 @@ function RankedList({ title, data, labelMap }: {
   if (entries.length === 0) return null;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
-      <div className="space-y-2">
-        {entries.map(([key, val]) => {
+      <div className="space-y-2.5">
+        {entries.map(([key, val], idx) => {
           const pct   = Math.round(val / total * 100);
           const label = labelMap?.[key] ?? key;
           return (
-            <div key={key} className="space-y-0.5">
+            <div key={key} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-700 truncate max-w-[70%]">{label}</span>
-                <span className="text-gray-400 font-medium">{pct}% · {fmtN(val)}</span>
+                <span className="text-gray-700 font-medium truncate max-w-[70%]">{label}</span>
+                <span className="text-gray-400">{pct}% · {fmtN(val)}</span>
               </div>
-              <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#FF7200] rounded-full" style={{ width: `${pct}%` }} />
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, transitionDelay: `${idx * 50}ms` }}
+                />
               </div>
             </div>
           );
@@ -237,9 +290,10 @@ export default function AudienceSection({
 }) {
   const [data,    setData]    = useState<AudienceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!clientId) { setLoading(false); return; }
+    if (!clientId) { setLoading(false); setTimeout(() => setVisible(true), 50); return; }
     supabase
       .from("audience")
       .select("gender_age, countries, cities")
@@ -249,27 +303,26 @@ export default function AudienceSection({
         if (error) console.warn("audience fetch error:", error.message);
         setData(row ?? null);
         setLoading(false);
+        setTimeout(() => setVisible(true), 50);
       });
   }, [clientId]);
 
-  if (loading) {
-    return <div className="text-center py-16 text-gray-300 text-sm">Cargando...</div>;
-  }
+  if (loading) return <Skeleton />;
 
   const audience = data ?? MOCK_AUDIENCE;
 
   return (
-    <div className="space-y-4">
-      {/* Mapa */}
+    <div
+      className="space-y-4 transition-opacity duration-500"
+      style={{ opacity: visible ? 1 : 0 }}
+    >
       <WorldMap countries={audience.countries} />
 
-      {/* Edad + Género */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AgeChart  genderAge={audience.gender_age} />
         <GenderBar genderAge={audience.gender_age} />
       </div>
 
-      {/* Top ciudades */}
       <RankedList title="Top ciudades" data={audience.cities} />
     </div>
   );
