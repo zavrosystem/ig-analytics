@@ -100,69 +100,102 @@ function Skeleton() {
   );
 }
 
-// ── World Map ────────────────────────────────────────────────────────────────
+// ── Geographic Section (map + top countries side by side) ────────────────────
 function WorldMap({ countries }: { countries: Record<string, number> }) {
-  const max          = Math.max(...Object.values(countries), 1);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const MAP_H        = 300; // fixed height target
+  const max     = Math.max(...Object.values(countries), 1);
+  const total   = Object.values(countries).reduce((s, v) => s + v, 0) || 1;
+  const topList = Object.entries(countries).sort(([,a],[,b]) => b - a).slice(0, 7);
 
-  // Scale computed so the world always fills the container width
-  const [mapWidth, setMapWidth] = useState(800);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapW, setMapW] = useState(500);
+  const MAP_H = 240;
+
   useEffect(() => {
-    const el = containerRef.current;
+    const el = mapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setMapWidth(el.clientWidth));
+    const ro = new ResizeObserver(() => setMapW(el.clientWidth));
     ro.observe(el);
-    setMapWidth(el.clientWidth);
+    setMapW(el.clientWidth);
     return () => ro.disconnect();
   }, []);
 
-  // scale so the world fills the width with small margin; cap so it fits height too
-  const scaleByWidth  = mapWidth * 0.148;
-  const scaleByHeight = MAP_H   * 0.50;
-  const scale         = Math.min(scaleByWidth, scaleByHeight);
+  // scale: fill width while staying within height
+  const scale = Math.min(mapW * 0.148, MAP_H * 0.52);
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Distribución geográfica</p>
-      <div ref={containerRef} style={{ height: MAP_H, overflow: "hidden" }}>
-        <ComposableMap
-          projection="geoNaturalEarth1"
-          projectionConfig={{ scale, translateX: mapWidth / 2, translateY: MAP_H / 2 }}
-          width={mapWidth}
-          height={MAP_H}
-          style={{ width: "100%", height: "100%", display: "block" }}
-        >
-          <Geographies geography={GEO_URL}>
-            {({ geographies }) =>
-              geographies
-                .filter(geo => Number(geo.id) !== 10)
-                .map((geo) => {
-                  const numId = String(geo.id).padStart(3, "0");
-                  const a2    = NUM_TO_A2[numId];
-                  const val   = a2 ? (countries[a2] ?? 0) : 0;
-                  const pct   = val / max;
-                  const fill  = val > 0
-                    ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
-                    : "#F3F4F6";
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={fill}
-                      stroke="#FFFFFF"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: "none" },
-                        hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#E5E7EB", outline: "none" },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  );
-                })
-            }
-          </Geographies>
-        </ComposableMap>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+        Distribución geográfica
+      </p>
+
+      <div className="flex gap-6 items-center">
+
+        {/* ── Map ─────────────────────────────────────── */}
+        <div ref={mapRef} className="flex-1 overflow-hidden rounded-xl bg-[#F8F8F8]"
+             style={{ height: MAP_H }}>
+          <ComposableMap
+            projection="geoNaturalEarth1"
+            projectionConfig={{ scale, translateX: mapW / 2, translateY: MAP_H / 2 }}
+            width={mapW}
+            height={MAP_H}
+            style={{ width: "100%", height: "100%", display: "block" }}
+          >
+            <Geographies geography={GEO_URL}>
+              {({ geographies }) =>
+                geographies
+                  .filter(geo => Number(geo.id) !== 10)
+                  .map((geo) => {
+                    const numId = String(geo.id).padStart(3, "0");
+                    const a2    = NUM_TO_A2[numId];
+                    const val   = a2 ? (countries[a2] ?? 0) : 0;
+                    const pct   = val / max;
+                    const fill  = val > 0
+                      ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
+                      : "#EBEBEB";
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={fill}
+                        stroke="#F8F8F8"
+                        strokeWidth={0.6}
+                        style={{
+                          default: { outline: "none" },
+                          hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.35 + pct * 0.65)})` : "#DCDCDC", outline: "none" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+              }
+            </Geographies>
+          </ComposableMap>
+        </div>
+
+        {/* ── Top countries ───────────────────────────── */}
+        <div className="w-44 shrink-0 space-y-2.5">
+          {topList.length === 0 ? (
+            <p className="text-xs text-gray-300 text-center">Sin datos</p>
+          ) : topList.map(([code, val]) => {
+            const pct   = Math.round(val / total * 100);
+            const label = COUNTRY_NAMES[code] ?? code;
+            return (
+              <div key={code} className="space-y-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-700 font-medium truncate pr-2">{label}</span>
+                  <span className="text-gray-400 shrink-0">{pct}%</span>
+                </div>
+                <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#FF7200] rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
       </div>
     </div>
   );
