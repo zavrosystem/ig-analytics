@@ -115,13 +115,13 @@ function GeoSection({ countries, cities }: { countries: Record<string, number>; 
     <div className="flex gap-4 items-stretch">
 
       {/* Map card — left */}
-      <div className="flex-1 min-w-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <div className="w-[62%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
           Distribución geográfica
         </p>
         <ComposableMap
           projection="geoMercator"
-          projectionConfig={{ scale: 140, center: [0, 35] }}
+          projectionConfig={{ scale: 160, center: [-15, 30] }}
           className="w-full h-auto"
           style={{ maxHeight: 440, display: "block" }}
         >
@@ -154,7 +154,7 @@ function GeoSection({ countries, cities }: { countries: Record<string, number>; 
       </div>
 
       {/* Cities card — right */}
-      <div className="w-52 shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <div className="flex-1 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Top ciudades</p>
         <div className="space-y-3">
           {topCities.map(([key, val], idx) => {
