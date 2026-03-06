@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -105,25 +105,11 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
   const total   = Object.values(countries).reduce((s, v) => s + v, 0) || 1;
   const topList = Object.entries(countries).sort(([,a],[,b]) => b - a).slice(0, 7);
 
-  // Measure the map container so scale is always correct
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [mapW, setMapW] = useState(700);
-  const MAP_H = 240;
-
-  useLayoutEffect(() => {
-    const el = mapRef.current;
-    if (!el) return;
-    const update = () => setMapW(el.clientWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  // scale so world fills ~93% of width; world height verified to fit MAP_H
-  const scale       = mapW * 0.148;
-  const translateX  = mapW / 2;
-  const translateY  = MAP_H * 0.50;
+  const getFill = (val: number) => {
+    if (!val) return "hsl(0,0%,88%)";
+    const ratio = val / max;
+    return `hsl(27, ${60 + ratio * 35}%, ${75 - ratio * 35}%)`;
+  };
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
@@ -134,40 +120,31 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
       <div className="flex gap-5 items-start">
 
         {/* Map */}
-        <div
-          ref={mapRef}
-          className="flex-1 rounded-xl overflow-hidden"
-          style={{ height: MAP_H, background: "#F5F5F5" }}
-        >
+        <div className="flex-1 rounded-xl overflow-hidden" style={{ background: "#F7F7F7" }}>
           <ComposableMap
-            projection="geoNaturalEarth1"
-            projectionConfig={{ scale, translateX, translateY }}
-            width={mapW}
-            height={MAP_H}
-            style={{ width: "100%", height: "100%", display: "block" }}
+            projection="geoMercator"
+            projectionConfig={{ scale: 140, center: [0, 35] }}
+            className="w-full h-auto"
+            style={{ maxHeight: 280, display: "block" }}
           >
             <Geographies geography={GEO_URL}>
               {({ geographies }) =>
                 geographies
-                  .filter(geo => Number(geo.id) !== 10)
+                  .filter(geo => geo.id !== "010")
                   .map(geo => {
                     const numId = String(geo.id).padStart(3, "0");
                     const a2    = NUM_TO_A2[numId];
                     const val   = a2 ? (countries[a2] ?? 0) : 0;
-                    const pct   = val / max;
-                    const fill  = val > 0
-                      ? `rgba(255,114,0,${0.18 + pct * 0.82})`
-                      : "#E4E4E4";
                     return (
                       <Geography
                         key={geo.rsmKey}
                         geography={geo}
-                        fill={fill}
-                        stroke="#F5F5F5"
+                        fill={getFill(val)}
+                        stroke="#fff"
                         strokeWidth={0.5}
                         style={{
                           default: { outline: "none" },
-                          hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.4+pct*0.6)})` : "#D5D5D5", outline: "none" },
+                          hover:   { outline: "none", opacity: 0.8 },
                           pressed: { outline: "none" },
                         }}
                       />
