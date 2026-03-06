@@ -105,44 +105,47 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
   const max = Math.max(...Object.values(countries), 1);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm overflow-hidden">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Distribución geográfica</p>
-      <div className="flex justify-center">
-      <ComposableMap
-        projection="geoNaturalEarth1"
-        projectionConfig={{ scale: 115, translateX: 400, translateY: 150 }}
-        width={800}
-        height={300}
-        style={{ width: "100%", maxWidth: 800, height: "auto", display: "block" }}
-      >
-        <Geographies geography={GEO_URL}>
-          {({ geographies }) =>
-            geographies.map((geo) => {
-              const numId = String(geo.id).padStart(3, "0");
-              const a2    = NUM_TO_A2[numId];
-              const val   = a2 ? (countries[a2] ?? 0) : 0;
-              const pct   = val / max;
-              const fill  = val > 0
-                ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
-                : "#F3F4F6";
-              return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill={fill}
-                  stroke="#FFFFFF"
-                  strokeWidth={0.5}
-                  style={{
-                    default:  { outline: "none" },
-                    hover:    { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#E5E7EB", outline: "none", cursor: val > 0 ? "pointer" : "default" },
-                    pressed:  { outline: "none" },
-                  }}
-                />
-              );
-            })
-          }
-        </Geographies>
-      </ComposableMap>
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Distribución geográfica</p>
+      {/* aspect-ratio matches the SVG viewBox so the map always fills with margins on all sides */}
+      <div style={{ aspectRatio: "800/340", width: "100%" }}>
+        <ComposableMap
+          projection="geoNaturalEarth1"
+          projectionConfig={{ scale: 125, translateX: 400, translateY: 175 }}
+          width={800}
+          height={340}
+          style={{ width: "100%", height: "auto", display: "block" }}
+        >
+          <Geographies geography={GEO_URL}>
+            {({ geographies }) =>
+              geographies
+                .filter(geo => Number(geo.id) !== 10) // quitar Antártida
+                .map((geo) => {
+                  const numId = String(geo.id).padStart(3, "0");
+                  const a2    = NUM_TO_A2[numId];
+                  const val   = a2 ? (countries[a2] ?? 0) : 0;
+                  const pct   = val / max;
+                  const fill  = val > 0
+                    ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
+                    : "#F3F4F6";
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={fill}
+                      stroke="#FFFFFF"
+                      strokeWidth={0.5}
+                      style={{
+                        default: { outline: "none" },
+                        hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#E5E7EB", outline: "none" },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  );
+                })
+            }
+          </Geographies>
+        </ComposableMap>
       </div>
     </div>
   );
