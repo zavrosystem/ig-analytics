@@ -108,9 +108,9 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm overflow-hidden">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Distribución geográfica</p>
       <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{ scale: 120, center: [15, 15] }}
-        viewBox="0 0 800 380"
+        projection="geoNaturalEarth1"
+        projectionConfig={{ scale: 145, center: [0, 10] }}
+        viewBox="0 0 800 430"
         style={{ width: "100%", height: "auto", display: "block" }}
       >
         <Geographies geography={GEO_URL}>
