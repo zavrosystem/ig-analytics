@@ -100,8 +100,10 @@ function Skeleton() {
 }
 
 // ── Geographic section ────────────────────────────────────────────────────────
-function GeoSection({ countries }: { countries: Record<string, number> }) {
+function GeoSection({ countries, cities }: { countries: Record<string, number>; cities: Record<string, number> }) {
   const max = Math.max(...Object.values(countries), 1);
+  const citiesTotal   = Object.values(cities).reduce((s, v) => s + v, 0) || 1;
+  const topCities = Object.entries(cities).sort(([,a],[,b]) => b - a).slice(0, 8);
 
   const getFill = (val: number) => {
     if (!val) return "hsl(0,0%,88%)";
@@ -115,39 +117,64 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
         Distribución geográfica
       </p>
 
-      <div className="relative w-full">
-        <ComposableMap
-          projection="geoMercator"
-          projectionConfig={{ scale: 140, center: [0, 35] }}
-          className="w-full h-auto"
-          style={{ maxHeight: 440, display: "block" }}
-        >
-          <Geographies geography={GEO_URL}>
-            {({ geographies }) =>
-              geographies
-                .filter(geo => geo.id !== "010")
-                .map(geo => {
-                  const numId = String(geo.id).padStart(3, "0");
-                  const a2    = NUM_TO_A2[numId];
-                  const val   = a2 ? (countries[a2] ?? 0) : 0;
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={getFill(val)}
-                      stroke="#fff"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: "none" },
-                        hover:   { outline: "none", opacity: 0.8 },
-                        pressed: { outline: "none" },
-                      }}
-                    />
-                  );
-                })
-            }
-          </Geographies>
-        </ComposableMap>
+      <div className="flex gap-6 items-start">
+        {/* Map — takes most of the space */}
+        <div className="flex-1 min-w-0">
+          <ComposableMap
+            projection="geoMercator"
+            projectionConfig={{ scale: 140, center: [0, 35] }}
+            className="w-full h-auto"
+            style={{ maxHeight: 440, display: "block" }}
+          >
+            <Geographies geography={GEO_URL}>
+              {({ geographies }) =>
+                geographies
+                  .filter(geo => geo.id !== "010")
+                  .map(geo => {
+                    const numId = String(geo.id).padStart(3, "0");
+                    const a2    = NUM_TO_A2[numId];
+                    const val   = a2 ? (countries[a2] ?? 0) : 0;
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={getFill(val)}
+                        stroke="#fff"
+                        strokeWidth={0.5}
+                        style={{
+                          default: { outline: "none" },
+                          hover:   { outline: "none", opacity: 0.8 },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+              }
+            </Geographies>
+          </ComposableMap>
+        </div>
+
+        {/* Top cities */}
+        <div className="w-48 shrink-0 space-y-3 pt-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Top ciudades</p>
+          {topCities.map(([key, val], idx) => {
+            const pct = Math.round(val / citiesTotal * 100);
+            return (
+              <div key={key} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-700 font-medium truncate max-w-[65%]">{key}</span>
+                  <span className="text-gray-400 tabular-nums shrink-0">{pct}%</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%`, transitionDelay: `${idx * 40}ms` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -318,14 +345,12 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      <GeoSection countries={audience.countries} />
+      <GeoSection countries={audience.countries} cities={audience.cities} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AgeChart   genderAge={audience.gender_age} />
         <GenderChart genderAge={audience.gender_age} />
       </div>
-
-      <CitiesList cities={audience.cities} />
     </div>
   );
 }
