@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
-// ── Country ISO numeric → ISO alpha-2 map (top countries) ───────────────────
+// ── Country ISO numeric → ISO alpha-2 ────────────────────────────────────────
 const NUM_TO_A2: Record<string, string> = {
   "484":"MX","840":"US","170":"CO","032":"AR","724":"ES","152":"CL",
   "604":"PE","862":"VE","076":"BR","218":"EC","320":"GT","188":"CR",
@@ -14,50 +14,52 @@ const NUM_TO_A2: Record<string, string> = {
   "036":"AU","392":"JP","410":"KR","356":"IN","156":"CN","710":"ZA",
 };
 
-// ── Types ────────────────────────────────────────────────────────────────────
+const COUNTRY_NAMES: Record<string, string> = {
+  MX:"México", US:"EE. UU.", CO:"Colombia", AR:"Argentina",
+  ES:"España", CL:"Chile", PE:"Perú", VE:"Venezuela", BR:"Brasil",
+  EC:"Ecuador", GT:"Guatemala", CR:"Costa Rica", PA:"Panamá",
+  DO:"R. Dominicana", BO:"Bolivia", PY:"Paraguay", UY:"Uruguay",
+  CA:"Canadá", GB:"Reino Unido", DE:"Alemania", FR:"Francia",
+  IT:"Italia", NL:"Países Bajos", AU:"Australia", JP:"Japón",
+  KR:"Corea del Sur", IN:"India", CN:"China", ZA:"Sudáfrica",
+};
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface AudienceData {
   gender_age: Record<string, number>;
   countries:  Record<string, number>;
   cities:     Record<string, number>;
 }
 
-// ── Mock data ────────────────────────────────────────────────────────────────
+// ── Mock data ─────────────────────────────────────────────────────────────────
 const MOCK_AUDIENCE: AudienceData = {
   gender_age: {
-    "F.13-17": 120,  "M.13-17": 80,
-    "F.18-24": 3420, "M.18-24": 2100,
-    "F.25-34": 5800, "M.25-34": 3200,
-    "F.35-44": 2100, "M.35-44": 1400,
-    "F.45-54": 620,  "M.45-54": 380,
-    "F.55-64": 180,  "M.55-64": 110,
-    "F.65+":   60,   "M.65+":   40,
+    "F.13-17": 120, "M.13-17": 80,
+    "F.18-24": 3420,"M.18-24": 2100,
+    "F.25-34": 5800,"M.25-34": 3200,
+    "F.35-44": 2100,"M.35-44": 1400,
+    "F.45-54": 620, "M.45-54": 380,
+    "F.55-64": 180, "M.55-64": 110,
+    "F.65+":   60,  "M.65+":   40,
   },
   countries: {
-    "MX": 14200, "US": 3100, "CO": 1400,
-    "AR": 980,   "ES": 720,  "CL": 510,
-    "PE": 390,   "VE": 280,
+    "MX":14200,"US":3100,"CO":1400,
+    "AR":980,  "ES":720, "CL":510,
+    "PE":390,  "VE":280,
   },
   cities: {
-    "Ciudad de México, Mexico": 5800,
-    "Monterrey, Mexico":        2100,
-    "Guadalajara, Mexico":      1800,
+    "Ciudad de México, Mexico":   5800,
+    "Monterrey, Mexico":          2100,
+    "Guadalajara, Mexico":        1800,
     "Los Angeles, United States": 920,
-    "Bogotá, Colombia":         740,
-    "Miami, United States":     580,
-    "Buenos Aires, Argentina":  420,
-    "Madrid, Spain":            310,
+    "Bogotá, Colombia":           740,
+    "Miami, United States":       580,
+    "Buenos Aires, Argentina":    420,
+    "Madrid, Spain":              310,
   },
 };
 
-const AGE_RANGES = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
-
-const COUNTRY_NAMES: Record<string, string> = {
-  MX:"México", US:"Estados Unidos", CO:"Colombia", AR:"Argentina",
-  ES:"España", CL:"Chile", PE:"Perú", VE:"Venezuela", BR:"Brasil",
-  EC:"Ecuador", GT:"Guatemala", CR:"Costa Rica", PA:"Panamá",
-  DO:"República Dominicana", BO:"Bolivia", PY:"Paraguay", UY:"Uruguay",
-  CA:"Canadá", GB:"Reino Unido", DE:"Alemania", FR:"Francia",
-};
+const AGE_RANGES = ["13-17","18-24","25-34","35-44","45-54","55-64","65+"];
 
 function fmtN(n: number) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
@@ -65,77 +67,81 @@ function fmtN(n: number) {
   return n.toLocaleString("es");
 }
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
     <div className="space-y-4 animate-pulse">
       <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-        <div className="h-3 w-32 bg-gray-100 rounded mb-4" />
-        <div className="h-[260px] bg-gray-50 rounded-xl" />
+        <div className="h-3 w-40 bg-gray-100 rounded mb-5" />
+        <div className="flex gap-5">
+          <div className="flex-1 h-[240px] bg-gray-50 rounded-xl" />
+          <div className="w-44 space-y-3 pt-1">
+            {[80,65,50,40,30].map(w => (
+              <div key={w} className="space-y-1.5">
+                <div className="h-2.5 bg-gray-100 rounded" style={{ width: `${w}%` }} />
+                <div className="h-1 bg-gray-50 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-          <div className="h-3 w-36 bg-gray-100 rounded" />
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="h-3 w-36 bg-gray-100 rounded mb-4" />
           <div className="h-[200px] bg-gray-50 rounded-xl" />
         </div>
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="h-3 w-16 bg-gray-100 rounded" />
-          <div className="h-3 w-full bg-gray-100 rounded-full" />
-          <div className="space-y-2">
-            <div className="h-3 w-48 bg-gray-100 rounded" />
-            <div className="h-3 w-48 bg-gray-100 rounded" />
-          </div>
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="h-3 w-16 bg-gray-100 rounded mb-4" />
+          <div className="h-[200px] bg-gray-50 rounded-xl" />
         </div>
-      </div>
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-        <div className="h-3 w-24 bg-gray-100 rounded" />
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="space-y-1.5">
-            <div className="h-2.5 bg-gray-100 rounded" style={{ width: `${80 - i * 10}%` }} />
-            <div className="h-1.5 bg-gray-50 rounded-full w-full" />
-          </div>
-        ))}
       </div>
     </div>
   );
 }
 
-// ── Geographic Section (map + top countries side by side) ────────────────────
-function WorldMap({ countries }: { countries: Record<string, number> }) {
+// ── Geographic section ────────────────────────────────────────────────────────
+function GeoSection({ countries }: { countries: Record<string, number> }) {
   const max     = Math.max(...Object.values(countries), 1);
   const total   = Object.values(countries).reduce((s, v) => s + v, 0) || 1;
   const topList = Object.entries(countries).sort(([,a],[,b]) => b - a).slice(0, 7);
 
+  // Measure the map container so scale is always correct
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapW, setMapW] = useState(500);
+  const [mapW, setMapW] = useState(700);
   const MAP_H = 240;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = mapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setMapW(el.clientWidth));
+    const update = () => setMapW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
     ro.observe(el);
-    setMapW(el.clientWidth);
     return () => ro.disconnect();
   }, []);
 
-  // scale: fill width while staying within height
-  const scale = Math.min(mapW * 0.148, MAP_H * 0.52);
+  // scale so world fills ~93% of width; world height verified to fit MAP_H
+  const scale       = mapW * 0.148;
+  const translateX  = mapW / 2;
+  const translateY  = MAP_H * 0.50;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-5">
         Distribución geográfica
       </p>
 
-      <div className="flex gap-6 items-center">
+      <div className="flex gap-5 items-start">
 
-        {/* ── Map ─────────────────────────────────────── */}
-        <div ref={mapRef} className="flex-1 overflow-hidden rounded-xl bg-[#F8F8F8]"
-             style={{ height: MAP_H }}>
+        {/* Map */}
+        <div
+          ref={mapRef}
+          className="flex-1 rounded-xl overflow-hidden"
+          style={{ height: MAP_H, background: "#F5F5F5" }}
+        >
           <ComposableMap
             projection="geoNaturalEarth1"
-            projectionConfig={{ scale, translateX: mapW / 2, translateY: MAP_H / 2 }}
+            projectionConfig={{ scale, translateX, translateY }}
             width={mapW}
             height={MAP_H}
             style={{ width: "100%", height: "100%", display: "block" }}
@@ -144,24 +150,24 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
               {({ geographies }) =>
                 geographies
                   .filter(geo => Number(geo.id) !== 10)
-                  .map((geo) => {
+                  .map(geo => {
                     const numId = String(geo.id).padStart(3, "0");
                     const a2    = NUM_TO_A2[numId];
                     const val   = a2 ? (countries[a2] ?? 0) : 0;
                     const pct   = val / max;
                     const fill  = val > 0
-                      ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
-                      : "#EBEBEB";
+                      ? `rgba(255,114,0,${0.18 + pct * 0.82})`
+                      : "#E4E4E4";
                     return (
                       <Geography
                         key={geo.rsmKey}
                         geography={geo}
                         fill={fill}
-                        stroke="#F8F8F8"
-                        strokeWidth={0.6}
+                        stroke="#F5F5F5"
+                        strokeWidth={0.5}
                         style={{
                           default: { outline: "none" },
-                          hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.35 + pct * 0.65)})` : "#DCDCDC", outline: "none" },
+                          hover:   { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.4+pct*0.6)})` : "#D5D5D5", outline: "none" },
                           pressed: { outline: "none" },
                         }}
                       />
@@ -172,28 +178,29 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
           </ComposableMap>
         </div>
 
-        {/* ── Top countries ───────────────────────────── */}
-        <div className="w-44 shrink-0 space-y-2.5">
-          {topList.length === 0 ? (
-            <p className="text-xs text-gray-300 text-center">Sin datos</p>
-          ) : topList.map(([code, val]) => {
-            const pct   = Math.round(val / total * 100);
-            const label = COUNTRY_NAMES[code] ?? code;
-            return (
-              <div key={code} className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-700 font-medium truncate pr-2">{label}</span>
-                  <span className="text-gray-400 shrink-0">{pct}%</span>
-                </div>
-                <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#FF7200] rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+        {/* Top countries */}
+        <div className="w-44 shrink-0 space-y-3 pt-0.5">
+          {topList.length === 0
+            ? <p className="text-xs text-gray-300">Sin datos</p>
+            : topList.map(([code, val], idx) => {
+                const pct   = Math.round(val / total * 100);
+                const label = COUNTRY_NAMES[code] ?? code;
+                return (
+                  <div key={code} className="space-y-1">
+                    <div className="flex justify-between items-baseline text-xs">
+                      <span className="text-gray-700 font-medium truncate pr-2">{label}</span>
+                      <span className="text-gray-400 shrink-0 tabular-nums">{pct}%</span>
+                    </div>
+                    <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, transitionDelay: `${idx * 40}ms` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+          }
         </div>
 
       </div>
@@ -201,26 +208,26 @@ function WorldMap({ countries }: { countries: Record<string, number> }) {
   );
 }
 
-// ── Age Chart (with gender toggle) ──────────────────────────────────────────
+// ── Age Chart ─────────────────────────────────────────────────────────────────
 function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
   const [byGender, setByGender] = useState(false);
 
   const data = AGE_RANGES.map(range => {
-    const female = genderAge[`F.${range}`] ?? 0;
-    const male   = genderAge[`M.${range}`] ?? 0;
-    return { range, Total: female + male, Mujeres: female, Hombres: male };
+    const f = genderAge[`F.${range}`] ?? 0;
+    const m = genderAge[`M.${range}`] ?? 0;
+    return { range, Total: f + m, Mujeres: f, Hombres: m };
   });
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Distribución por edad</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          Distribución por edad
+        </p>
         <button
           onClick={() => setByGender(b => !b)}
           className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-200 ${
-            byGender
-              ? "bg-[#FF7200] text-white shadow-sm"
-              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+            byGender ? "bg-[#FF7200] text-white shadow-sm" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
           }`}
         >
           Por género
@@ -254,17 +261,17 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
   );
 }
 
-// ── Gender Chart ─────────────────────────────────────────────────────────────
-function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
-  const female = Object.entries(genderAge).filter(([k]) => k.startsWith("F.")).reduce((s, [,v]) => s + v, 0);
-  const male   = Object.entries(genderAge).filter(([k]) => k.startsWith("M.")).reduce((s, [,v]) => s + v, 0);
+// ── Gender Chart ──────────────────────────────────────────────────────────────
+function GenderChart({ genderAge }: { genderAge: Record<string, number> }) {
+  const female = Object.entries(genderAge).filter(([k]) => k.startsWith("F.")).reduce((s,[,v]) => s+v, 0);
+  const male   = Object.entries(genderAge).filter(([k]) => k.startsWith("M.")).reduce((s,[,v]) => s+v, 0);
   const total  = female + male || 1;
   const fPct   = Math.round(female / total * 100);
   const mPct   = 100 - fPct;
 
   const data = [
-    { label: "Mujeres", value: female, pct: fPct, fill: "#F9A8D4" },
-    { label: "Hombres", value: male,   pct: mPct, fill: "#93C5FD" },
+    { label: "Mujeres", value: female, fill: "#F9A8D4" },
+    { label: "Hombres", value: male,   fill: "#93C5FD" },
   ];
 
   return (
@@ -280,13 +287,11 @@ function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
             cursor={{ fill: "rgba(0,0,0,0.03)" }}
           />
           <Bar dataKey="value" radius={[6,6,0,0]} isAnimationActive animationDuration={550}>
-            {data.map((entry, i) => (
-              <Cell key={i} fill={entry.fill} />
-            ))}
+            {data.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <div className="flex justify-between text-xs text-gray-400 pt-1">
+      <div className="flex justify-between text-xs text-gray-400">
         <span className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-pink-300 inline-block" />
           Mujeres · {fPct}%
@@ -300,33 +305,28 @@ function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
   );
 }
 
-// ── Ranked List ──────────────────────────────────────────────────────────────
-function RankedList({ title, data, labelMap }: {
-  title: string;
-  data: Record<string, number>;
-  labelMap?: Record<string, string>;
-}) {
-  const total   = Object.values(data).reduce((s, v) => s + v, 0) || 1;
-  const entries = Object.entries(data).sort(([,a],[,b]) => b - a).slice(0, 8);
+// ── Cities list ───────────────────────────────────────────────────────────────
+function CitiesList({ cities }: { cities: Record<string, number> }) {
+  const total   = Object.values(cities).reduce((s, v) => s + v, 0) || 1;
+  const entries = Object.entries(cities).sort(([,a],[,b]) => b - a).slice(0, 8);
   if (entries.length === 0) return null;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{title}</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Top ciudades</p>
       <div className="space-y-2.5">
         {entries.map(([key, val], idx) => {
-          const pct   = Math.round(val / total * 100);
-          const label = labelMap?.[key] ?? key;
+          const pct = Math.round(val / total * 100);
           return (
             <div key={key} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-700 font-medium truncate max-w-[70%]">{label}</span>
-                <span className="text-gray-400">{pct}% · {fmtN(val)}</span>
+                <span className="text-gray-700 font-medium truncate max-w-[70%]">{key}</span>
+                <span className="text-gray-400 tabular-nums">{pct}% · {fmtN(val)}</span>
               </div>
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
-                  style={{ width: `${pct}%`, transitionDelay: `${idx * 50}ms` }}
+                  style={{ width: `${pct}%`, transitionDelay: `${idx * 40}ms` }}
                 />
               </div>
             </div>
@@ -373,14 +373,14 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      <WorldMap countries={audience.countries} />
+      <GeoSection countries={audience.countries} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <AgeChart  genderAge={audience.gender_age} />
-        <GenderBar genderAge={audience.gender_age} />
+        <AgeChart   genderAge={audience.gender_age} />
+        <GenderChart genderAge={audience.gender_age} />
       </div>
 
-      <RankedList title="Top ciudades" data={audience.cities} />
+      <CitiesList cities={audience.cities} />
     </div>
   );
 }
