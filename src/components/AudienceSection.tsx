@@ -110,7 +110,7 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
   };
 
   return (
-    <div className="w-[46.5%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm overflow-hidden">
+    <div className="w-[46.5%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
         Distribución geográfica
       </p>
@@ -118,7 +118,7 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
         projection="geoMercator"
         projectionConfig={{ scale: 138, center: [0, 40] }}
         className="w-full h-auto"
-        style={{ maxHeight: 440, display: "block" }}
+        style={{ display: "block" }}
       >
         <Geographies geography={GEO_URL}>
           {({ geographies }) =>
