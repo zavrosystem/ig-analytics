@@ -117,8 +117,8 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ scale: 118, center: [-10, 35] }}
-        width={1000}
-        height={500}
+        width={1600}
+        height={600}
         className="w-full h-auto"
         style={{ display: "block" }}
       >
