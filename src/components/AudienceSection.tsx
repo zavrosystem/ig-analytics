@@ -115,7 +115,7 @@ function GeoSection({ countries, cities }: { countries: Record<string, number>; 
     <div className="flex gap-4 items-stretch">
 
       {/* Map card — left */}
-      <div className="w-[62%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+      <div className="w-[48%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
           Distribución geográfica
         </p>
