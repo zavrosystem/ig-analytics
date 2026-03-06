@@ -101,7 +101,7 @@ function Skeleton() {
 }
 
 // ── Geographic section ────────────────────────────────────────────────────────
-const W = 800, H = 420;
+const W = 800, H = 500;
 
 function GeoSection({ countries }: { countries: Record<string, number> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -113,7 +113,7 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const projection = geoNaturalEarth1().scale(135).translate([W / 2, H / 2 + 15]);
+    const projection = geoNaturalEarth1().scale(153).translate([W / 2, H / 2 + 20]);
     const pathGen = geoPath(projection, ctx);
 
     fetch(GEO_URL)
