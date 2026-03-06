@@ -101,9 +101,7 @@ function Skeleton() {
 
 // ── Geographic section ────────────────────────────────────────────────────────
 function GeoSection({ countries }: { countries: Record<string, number> }) {
-  const max     = Math.max(...Object.values(countries), 1);
-  const total   = Object.values(countries).reduce((s, v) => s + v, 0) || 1;
-  const topList = Object.entries(countries).sort(([,a],[,b]) => b - a).slice(0, 7);
+  const max = Math.max(...Object.values(countries), 1);
 
   const getFill = (val: number) => {
     if (!val) return "hsl(0,0%,88%)";
@@ -117,69 +115,39 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
         Distribución geográfica
       </p>
 
-      <div className="flex gap-5 items-start">
-
-        {/* Map */}
-        <div className="flex-1 rounded-xl overflow-hidden" style={{ background: "#F7F7F7" }}>
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{ scale: 140, center: [0, 35] }}
-            className="w-full h-auto"
-            style={{ maxHeight: 280, display: "block" }}
-          >
-            <Geographies geography={GEO_URL}>
-              {({ geographies }) =>
-                geographies
-                  .filter(geo => geo.id !== "010")
-                  .map(geo => {
-                    const numId = String(geo.id).padStart(3, "0");
-                    const a2    = NUM_TO_A2[numId];
-                    const val   = a2 ? (countries[a2] ?? 0) : 0;
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        fill={getFill(val)}
-                        stroke="#fff"
-                        strokeWidth={0.5}
-                        style={{
-                          default: { outline: "none" },
-                          hover:   { outline: "none", opacity: 0.8 },
-                          pressed: { outline: "none" },
-                        }}
-                      />
-                    );
-                  })
-              }
-            </Geographies>
-          </ComposableMap>
-        </div>
-
-        {/* Top countries */}
-        <div className="w-44 shrink-0 space-y-3 pt-0.5">
-          {topList.length === 0
-            ? <p className="text-xs text-gray-300">Sin datos</p>
-            : topList.map(([code, val], idx) => {
-                const pct   = Math.round(val / total * 100);
-                const label = COUNTRY_NAMES[code] ?? code;
-                return (
-                  <div key={code} className="space-y-1">
-                    <div className="flex justify-between items-baseline text-xs">
-                      <span className="text-gray-700 font-medium truncate pr-2">{label}</span>
-                      <span className="text-gray-400 shrink-0 tabular-nums">{pct}%</span>
-                    </div>
-                    <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#FF7200] rounded-full transition-all duration-700"
-                        style={{ width: `${pct}%`, transitionDelay: `${idx * 40}ms` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-          }
-        </div>
-
+      <div className="relative w-full">
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{ scale: 140, center: [0, 35] }}
+          className="w-full h-auto"
+          style={{ maxHeight: 440, display: "block" }}
+        >
+          <Geographies geography={GEO_URL}>
+            {({ geographies }) =>
+              geographies
+                .filter(geo => geo.id !== "010")
+                .map(geo => {
+                  const numId = String(geo.id).padStart(3, "0");
+                  const a2    = NUM_TO_A2[numId];
+                  const val   = a2 ? (countries[a2] ?? 0) : 0;
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={getFill(val)}
+                      stroke="#fff"
+                      strokeWidth={0.5}
+                      style={{
+                        default: { outline: "none" },
+                        hover:   { outline: "none", opacity: 0.8 },
+                        pressed: { outline: "none" },
+                      }}
+                    />
+                  );
+                })
+            }
+          </Geographies>
+        </ComposableMap>
       </div>
     </div>
   );
