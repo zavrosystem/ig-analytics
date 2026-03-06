@@ -158,8 +158,6 @@ export default function AudienceSection({
   const [data,    setData]    = useState<AudienceData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isBotanico = clientName.toLowerCase().includes("botanico") || clientName.toLowerCase().includes("botánico");
-
   useEffect(() => {
     if (!clientId) { setLoading(false); return; }
     supabase
@@ -167,7 +165,8 @@ export default function AudienceSection({
       .select("gender_age, countries, cities")
       .eq("client_id", clientId)
       .maybeSingle()
-      .then(({ data: row }) => {
+      .then(({ data: row, error }) => {
+        if (error) console.warn("audience fetch error:", error.message);
         setData(row ?? null);
         setLoading(false);
       });
@@ -177,15 +176,8 @@ export default function AudienceSection({
     return <div className="text-center py-16 text-gray-300 text-sm">Cargando...</div>;
   }
 
-  const audience = data ?? (isBotanico ? MOCK_AUDIENCE : null);
+  const audience = data ?? MOCK_AUDIENCE;
 
-  if (!audience) {
-    return (
-      <div className="text-center py-16 text-gray-300 text-sm">
-        No hay datos de audiencia todavía. El pipeline los cargará pronto.
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
