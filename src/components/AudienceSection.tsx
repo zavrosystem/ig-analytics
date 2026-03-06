@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import React, { useEffect, useRef, useState } from "react";
+import { geoNaturalEarth1, geoPath } from "d3-geo";
+import { feature } from "topojson-client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -100,52 +101,52 @@ function Skeleton() {
 }
 
 // ── Geographic section ────────────────────────────────────────────────────────
+const W = 800, H = 420;
+
 function GeoSection({ countries }: { countries: Record<string, number> }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const max = Math.max(...Object.values(countries), 1);
 
-  const getFill = (val: number) => {
-    if (!val) return "hsl(0,0%,88%)";
-    const ratio = val / max;
-    return `hsl(27, ${60 + ratio * 35}%, ${75 - ratio * 35}%)`;
-  };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const projection = geoNaturalEarth1().scale(135).translate([W / 2, H / 2 + 15]);
+    const pathGen = geoPath(projection, ctx);
+
+    fetch(GEO_URL)
+      .then(r => r.json())
+      .then((world: any) => {
+        const geojson = feature(world, world.objects.countries) as any;
+        ctx.clearRect(0, 0, W, H);
+        geojson.features
+          .filter((f: any) => String(f.id) !== "10")
+          .forEach((f: any) => {
+            const numId = String(f.id).padStart(3, "0");
+            const a2    = NUM_TO_A2[numId];
+            const val   = a2 ? (countries[a2] ?? 0) : 0;
+            const ratio = val / max;
+            ctx.beginPath();
+            pathGen(f);
+            ctx.fillStyle = val
+              ? `hsl(27, ${60 + ratio * 35}%, ${75 - ratio * 35}%)`
+              : "hsl(0,0%,88%)";
+            ctx.fill();
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          });
+      });
+  }, [countries]);
 
   return (
     <div className="w-[46.5%] shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">
         Distribución geográfica
       </p>
-      <ComposableMap
-        projection="geoEquirectangular"
-        projectionConfig={{ scale: 120, center: [0, 20] }}
-        className="w-full h-auto"
-        style={{ display: "block" }}
-      >
-        <Geographies geography={GEO_URL}>
-          {({ geographies }) =>
-            geographies
-              .filter(geo => geo.id !== "010")
-              .map(geo => {
-                const numId = String(geo.id).padStart(3, "0");
-                const a2    = NUM_TO_A2[numId];
-                const val   = a2 ? (countries[a2] ?? 0) : 0;
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill={getFill(val)}
-                    stroke="#fff"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: "none" },
-                      hover:   { outline: "none", opacity: 0.8 },
-                      pressed: { outline: "none" },
-                    }}
-                  />
-                );
-              })
-          }
-        </Geographies>
-      </ComposableMap>
+      <canvas ref={canvasRef} width={W} height={H} className="w-full h-auto" />
     </div>
   );
 }
