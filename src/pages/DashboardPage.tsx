@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ContentSection from "@/components/ReelsSection";
 import MessagesSection from "@/components/MessagesSection";
 import AdsSection from "@/components/AdsSection";
+import AudienceSection from "@/components/AudienceSection";
 import { Session } from "@supabase/supabase-js";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,7 +15,7 @@ import {
 import {
   Users, Eye, BarChart2, UserCircle,
   LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, Megaphone,
-  MessageCircle, DollarSign,
+  MessageCircle, DollarSign, PieChart,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -246,7 +247,7 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [allClients, setAllClients]             = useState<ClientInfo[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading]                   = useState(true);
-  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages">("dashboard");
+  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages" | "audience">("dashboard");
   const [convCount, setConvCount]               = useState(0);
   const [totalSpend, setTotalSpend]             = useState(0);
   const [followerView, setFollowerView]         = useState<"growth" | "loss">("growth");
@@ -408,6 +409,12 @@ export default function DashboardPage({ session }: { session: Session }) {
             active={activeNav === "ads"}
             onClick={() => setActiveNav("ads")}
           />
+          <NavItem
+            icon={<PieChart className="w-full h-full" />}
+            label="Audiencia"
+            active={activeNav === "audience"}
+            onClick={() => setActiveNav("audience")}
+          />
         </nav>
 
         {/* Filters */}
@@ -474,6 +481,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                 {activeNav === "dashboard" ? (clientName || "Dashboard")
                   : activeNav === "reels" ? "Contenido orgánico"
                   : activeNav === "ads" ? "Contenido pagado"
+                  : activeNav === "audience" ? "Audiencia"
                   : "Mensajes"}
               </h1>
               {activeNav === "dashboard" && dateRange && (
@@ -669,6 +677,12 @@ export default function DashboardPage({ session }: { session: Session }) {
           )}
 
           {/* ── MENSAJES TAB ──────────────────────────────────────────────────── */}
+          {activeNav === "audience" && (
+            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
+              <AudienceSection clientId={selectedClientId} clientName={clientName} />
+            </div>
+          )}
+
           {activeNav === "messages" && (
             <MessagesSection clientId={selectedClientId} />
           )}
