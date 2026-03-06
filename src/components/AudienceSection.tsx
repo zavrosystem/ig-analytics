@@ -192,8 +192,8 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
   });
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col">
+      <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
           Distribución por edad
         </p>
@@ -206,9 +206,10 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
           Por género
         </button>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
+      <div className="flex-1 min-h-0">
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="25%">
-          <XAxis dataKey="range" tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} />
+          <XAxis dataKey="range" tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
           <YAxis tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
           <Tooltip
             formatter={(v: number, name: string) => [fmtN(v), name]}
@@ -230,6 +231,7 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
           )}
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
