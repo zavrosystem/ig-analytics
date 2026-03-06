@@ -1,15 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 
-// ── Types ───────────────────────────────────────────────────────────────────
+const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+// ── Country ISO numeric → ISO alpha-2 map (top countries) ───────────────────
+const NUM_TO_A2: Record<string, string> = {
+  "484":"MX","840":"US","170":"CO","032":"AR","724":"ES","152":"CL",
+  "604":"PE","862":"VE","076":"BR","218":"EC","320":"GT","188":"CR",
+  "591":"PA","214":"DO","068":"BO","600":"PY","858":"UY","124":"CA",
+  "826":"GB","276":"DE","250":"FR","380":"IT","528":"NL","056":"BE",
+  "036":"AU","392":"JP","410":"KR","356":"IN","156":"CN","710":"ZA",
+};
+
+// ── Types ────────────────────────────────────────────────────────────────────
 interface AudienceData {
   gender_age: Record<string, number>;
   countries:  Record<string, number>;
   cities:     Record<string, number>;
 }
 
-// ── Mock data (Cafe Botanico demo) ──────────────────────────────────────────
+// ── Mock data ────────────────────────────────────────────────────────────────
 const MOCK_AUDIENCE: AudienceData = {
   gender_age: {
     "F.13-17": 120,  "M.13-17": 80,
@@ -39,23 +51,128 @@ const MOCK_AUDIENCE: AudienceData = {
 
 const AGE_RANGES = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
+const COUNTRY_NAMES: Record<string, string> = {
+  MX:"México", US:"Estados Unidos", CO:"Colombia", AR:"Argentina",
+  ES:"España", CL:"Chile", PE:"Perú", VE:"Venezuela", BR:"Brasil",
+  EC:"Ecuador", GT:"Guatemala", CR:"Costa Rica", PA:"Panamá",
+  DO:"República Dominicana", BO:"Bolivia", PY:"Paraguay", UY:"Uruguay",
+  CA:"Canadá", GB:"Reino Unido", DE:"Alemania", FR:"Francia",
+};
+
 function fmtN(n: number) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
   if (n >= 1_000)     return (n / 1_000).toFixed(1) + "K";
   return n.toLocaleString("es");
 }
 
-// ── Gender bar ───────────────────────────────────────────────────────────────
+// ── World Map ────────────────────────────────────────────────────────────────
+function WorldMap({ countries }: { countries: Record<string, number> }) {
+  const max    = Math.max(...Object.values(countries), 1);
+  const a2Set  = new Set(Object.keys(countries));
+
+  // Convert alpha-2 codes to numeric for lookup
+  const a2ToNum = Object.fromEntries(Object.entries(NUM_TO_A2).map(([n, a]) => [a, n]));
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Distribución geográfica</p>
+      <ComposableMap
+        projection="geoMercator"
+        projectionConfig={{ scale: 130, center: [10, 20] }}
+        style={{ width: "100%", height: "auto" }}
+        height={300}
+      >
+        <Geographies geography={GEO_URL}>
+          {({ geographies }) =>
+            geographies.map((geo) => {
+              const numId = String(geo.id).padStart(3, "0");
+              const a2    = NUM_TO_A2[numId];
+              const val   = a2 ? (countries[a2] ?? 0) : 0;
+              const pct   = val / max;
+              const fill  = val > 0
+                ? `rgba(255, 114, 0, ${0.15 + pct * 0.85})`
+                : "#E5E7EB";
+              return (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill={fill}
+                  stroke="#FFFFFF"
+                  strokeWidth={0.5}
+                  style={{
+                    default:  { outline: "none" },
+                    hover:    { fill: val > 0 ? `rgba(255,114,0,${Math.min(1, 0.3 + pct)})` : "#D1D5DB", outline: "none" },
+                    pressed:  { outline: "none" },
+                  }}
+                />
+              );
+            })
+          }
+        </Geographies>
+      </ComposableMap>
+    </div>
+  );
+}
+
+// ── Age Chart (with gender toggle) ──────────────────────────────────────────
+function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
+  const [byGender, setByGender] = useState(false);
+
+  const data = AGE_RANGES.map(range => {
+    const female = genderAge[`F.${range}`] ?? 0;
+    const male   = genderAge[`M.${range}`] ?? 0;
+    return { range, Total: female + male, Mujeres: female, Hombres: male };
+  });
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Distribución por edad</p>
+        <button
+          onClick={() => setByGender(b => !b)}
+          className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all ${
+            byGender
+              ? "bg-[#FF7200] text-white"
+              : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+          }`}
+        >
+          Por género
+        </button>
+      </div>
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="25%">
+          <XAxis dataKey="range" tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
+          <Tooltip
+            formatter={(v: number, name: string) => [fmtN(v), name]}
+            contentStyle={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 8, fontSize: 11 }}
+          />
+          {byGender ? (
+            <>
+              <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: 10 }} />
+              <Bar dataKey="Mujeres" stackId="a" fill="#F9A8D4" radius={[0,0,0,0]} />
+              <Bar dataKey="Hombres" stackId="a" fill="#93C5FD" radius={[4,4,0,0]} />
+            </>
+          ) : (
+            <Bar dataKey="Total" radius={[4,4,0,0]}>
+              {data.map((_, i) => (
+                <Cell key={i} fill="#FF7200" fillOpacity={0.7 + (i / data.length) * 0.3} />
+              ))}
+            </Bar>
+          )}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── Gender Bar ───────────────────────────────────────────────────────────────
 function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
-  const female = Object.entries(genderAge)
-    .filter(([k]) => k.startsWith("F."))
-    .reduce((s, [, v]) => s + v, 0);
-  const male = Object.entries(genderAge)
-    .filter(([k]) => k.startsWith("M."))
-    .reduce((s, [, v]) => s + v, 0);
-  const total = female + male || 1;
-  const fPct  = Math.round(female / total * 100);
-  const mPct  = 100 - fPct;
+  const female = Object.entries(genderAge).filter(([k]) => k.startsWith("F.")).reduce((s, [,v]) => s + v, 0);
+  const male   = Object.entries(genderAge).filter(([k]) => k.startsWith("M.")).reduce((s, [,v]) => s + v, 0);
+  const total  = female + male || 1;
+  const fPct   = Math.round(female / total * 100);
+  const mPct   = 100 - fPct;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
@@ -76,43 +193,15 @@ function GenderBar({ genderAge }: { genderAge: Record<string, number> }) {
   );
 }
 
-// ── Age chart ────────────────────────────────────────────────────────────────
-function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
-  const data = AGE_RANGES.map(range => {
-    const female = genderAge[`F.${range}`] ?? 0;
-    const male   = genderAge[`M.${range}`] ?? 0;
-    return { range, Mujeres: female, Hombres: male };
-  });
-
-  return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Distribución por edad</p>
-      <ResponsiveContainer width="100%" height={180}>
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
-          <XAxis type="number" tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
-          <YAxis type="category" dataKey="range" tick={{ fill: "#6B7280", fontSize: 10 }} axisLine={false} tickLine={false} width={36} />
-          <Tooltip
-            formatter={(v: number, name: string) => [fmtN(v), name]}
-            contentStyle={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 8, fontSize: 11 }}
-          />
-          <Bar dataKey="Mujeres" stackId="a" fill="#F9A8D4" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="Hombres" stackId="a" fill="#93C5FD" radius={[0, 4, 4, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// ── Ranked list ──────────────────────────────────────────────────────────────
+// ── Ranked List ──────────────────────────────────────────────────────────────
 function RankedList({ title, data, labelMap }: {
   title: string;
   data: Record<string, number>;
   labelMap?: Record<string, string>;
 }) {
   const total   = Object.values(data).reduce((s, v) => s + v, 0) || 1;
-  const entries = Object.entries(data)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 8);
+  const entries = Object.entries(data).sort(([,a],[,b]) => b - a).slice(0, 8);
+  if (entries.length === 0) return null;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
@@ -137,15 +226,6 @@ function RankedList({ title, data, labelMap }: {
     </div>
   );
 }
-
-// ── Country labels (ISO → name) ──────────────────────────────────────────────
-const COUNTRY_NAMES: Record<string, string> = {
-  MX: "México", US: "Estados Unidos", CO: "Colombia", AR: "Argentina",
-  ES: "España", CL: "Chile", PE: "Perú", VE: "Venezuela", BR: "Brasil",
-  EC: "Ecuador", GT: "Guatemala", CR: "Costa Rica", PA: "Panamá",
-  DO: "República Dominicana", BO: "Bolivia", PY: "Paraguay", UY: "Uruguay",
-  CA: "Canadá", GB: "Reino Unido", DE: "Alemania", FR: "Francia",
-};
 
 // ── Main export ───────────────────────────────────────────────────────────────
 export default function AudienceSection({
@@ -178,15 +258,19 @@ export default function AudienceSection({
 
   const audience = data ?? MOCK_AUDIENCE;
 
-
   return (
     <div className="space-y-4">
-      <GenderBar genderAge={audience.gender_age} />
-      <AgeChart   genderAge={audience.gender_age} />
+      {/* Mapa */}
+      <WorldMap countries={audience.countries} />
+
+      {/* Edad + Género */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <RankedList title="Top países"  data={audience.countries} labelMap={COUNTRY_NAMES} />
-        <RankedList title="Top ciudades" data={audience.cities} />
+        <AgeChart  genderAge={audience.gender_age} />
+        <GenderBar genderAge={audience.gender_age} />
       </div>
+
+      {/* Top ciudades */}
+      <RankedList title="Top ciudades" data={audience.cities} />
     </div>
   );
 }
