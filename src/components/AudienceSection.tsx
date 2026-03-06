@@ -118,7 +118,7 @@ function GeoSection({ countries }: { countries: Record<string, number> }) {
         projection="geoMercator"
         projectionConfig={{ scale: 138, center: [0, 40] }}
         className="w-full h-auto"
-        style={{ display: "block", transform: "translateX(-1%)" }}
+        style={{ display: "block", transform: "translateX(-1%) scale(0.92)", transformOrigin: "center center" }}
       >
         <Geographies geography={GEO_URL}>
           {({ geographies }) =>
