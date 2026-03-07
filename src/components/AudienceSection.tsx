@@ -148,7 +148,7 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
             const ratio = val / max;
             ctx.beginPath();
             pg(f);
-            ctx.fillStyle = val ? `hsl(27,${60 + ratio*35}%,${75 - ratio*35}%)` : "#c5c2bc";
+            ctx.fillStyle = val ? `hsl(25,100%,${76 - ratio*36}%)` : "#c5c2bc";
             ctx.fill();
             ctx.strokeStyle = "rgba(255,255,255,0.5)";
             ctx.lineWidth = 0.4;
