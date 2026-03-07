@@ -410,6 +410,12 @@ export default function DashboardPage({ session }: { session: Session }) {
             onClick={() => setActiveNav("ads")}
           />
           <NavItem
+            icon={<MessageCircle className="w-full h-full" />}
+            label="Mensajes"
+            active={activeNav === "messages"}
+            onClick={() => setActiveNav("messages")}
+          />
+          <NavItem
             icon={<PieChart className="w-full h-full" />}
             label="Audiencia"
             active={activeNav === "audience"}
