@@ -24,6 +24,32 @@ const A2_TO_NAME: Record<string, string> = {
   JP:"Japón", KR:"Corea del Sur", IN:"India", CN:"China", ZA:"Sudáfrica",
 };
 
+// Nombre directo por ID numérico del world-atlas (cubre todos los países)
+const NUM_TO_NAME: Record<number, string> = {
+  4:"Afganistán",8:"Albania",12:"Argelia",24:"Angola",32:"Argentina",36:"Australia",
+  40:"Austria",50:"Bangladesh",56:"Bélgica",68:"Bolivia",76:"Brasil",100:"Bulgaria",
+  116:"Camboya",120:"Camerún",124:"Canadá",144:"Sri Lanka",152:"Chile",156:"China",
+  170:"Colombia",178:"Congo",180:"RD Congo",191:"Croacia",192:"Cuba",203:"Rep. Checa",
+  208:"Dinamarca",214:"Rep. Dominicana",218:"Ecuador",231:"Etiopía",246:"Finlandia",
+  250:"Francia",270:"Gambia",276:"Alemania",288:"Ghana",300:"Grecia",320:"Guatemala",
+  324:"Guinea",340:"Honduras",348:"Hungría",356:"India",360:"Indonesia",364:"Irán",
+  368:"Irak",372:"Irlanda",380:"Italia",392:"Japón",398:"Kazajistán",404:"Kenia",
+  408:"Corea del Norte",410:"Corea del Sur",440:"Lituania",450:"Madagascar",
+  458:"Malasia",466:"Malí",478:"Mauritania",484:"México",498:"Moldavia",
+  504:"Marruecos",508:"Mozambique",524:"Nepal",528:"Países Bajos",554:"Nueva Zelanda",
+  562:"Níger",566:"Nigeria",578:"Noruega",586:"Pakistán",591:"Panamá",
+  598:"Papúa Nueva Guinea",600:"Paraguay",604:"Perú",608:"Filipinas",616:"Polonia",
+  620:"Portugal",642:"Rumanía",643:"Rusia",682:"Arabia Saudita",686:"Senegal",
+  688:"Serbia",703:"Eslovaquia",705:"Eslovenia",706:"Somalia",710:"Sudáfrica",
+  724:"España",729:"Sudán",752:"Suecia",756:"Suiza",760:"Siria",764:"Tailandia",
+  784:"Emiratos Árabes",788:"Túnez",792:"Turquía",800:"Uganda",804:"Ucrania",
+  818:"Egipto",826:"Reino Unido",840:"Estados Unidos",854:"Burkina Faso",
+  858:"Uruguay",862:"Venezuela",887:"Yemen",894:"Zambia",716:"Zimbabue",
+  72:"Botsuana",108:"Burundi",140:"Rep. Centroafricana",148:"Chad",
+  233:"Estonia",304:"Groenlandia",352:"Islandia",384:"Costa de Marfil",
+  428:"Letonia",704:"Vietnam",
+};
+
 interface AudienceData {
   gender_age: Record<string, number>;
   countries:  Record<string, number>;
@@ -204,7 +230,7 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
         const numId = String(found.id).padStart(3, "0");
         const a2    = NUM_TO_A2[numId];
         const val   = a2 ? (countryRef.current[a2] ?? 0) : 0;
-        const name  = (a2 && A2_TO_NAME[a2]) || a2 || "–";
+        const name  = NUM_TO_NAME[+found.id] || (a2 && A2_TO_NAME[a2]) || "–";
         tip.innerHTML = `<span style="color:#f97316;font-size:10px;display:block;margin-bottom:2px">${name}</span>${val > 0 ? `<b>${fmtN(val)}</b> seguidores` : "Sin datos"}`;
         tip.style.opacity = "1";
         tip.style.left = (e.clientX + 14) + "px";
