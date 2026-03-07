@@ -191,17 +191,19 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
   }, []);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center">
+    <div className="h-full bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 self-start">
         Distribución geográfica
       </p>
-      <canvas
-        ref={canvasRef}
-        width={GLOBE_SIZE}
-        height={GLOBE_SIZE}
-        className="h-auto"
-        style={{ cursor: "grab", maxHeight: "320px", width: "auto" }}
-      />
+      <div className="flex-1 flex items-center justify-center w-full">
+        <canvas
+          ref={canvasRef}
+          width={GLOBE_SIZE}
+          height={GLOBE_SIZE}
+          className="h-auto"
+          style={{ cursor: "grab", maxHeight: "360px", width: "auto" }}
+        />
+      </div>
     </div>
   );
 }
@@ -441,17 +443,21 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      {/* Fila 1: globo full width */}
-      <GlobeSection countries={audience.countries} />
-
-      {/* Fila 2: ciudades + edad */}
-      <div className="grid grid-cols-2 gap-4">
-        <CitiesList cities={audience.cities} />
-        <AgeChart genderAge={audience.gender_age} />
+      {/* Fila 1: ciudades 30% + globo 70% */}
+      <div className="flex gap-4 items-stretch">
+        <div className="w-[30%] shrink-0">
+          <CitiesList cities={audience.cities} />
+        </div>
+        <div className="flex-1">
+          <GlobeSection countries={audience.countries} />
+        </div>
       </div>
 
-      {/* Fila 3: heatmap full width */}
-      <ActivityHeatmap />
+      {/* Fila 2: edad 50% + heatmap 50% */}
+      <div className="grid grid-cols-2 gap-4">
+        <AgeChart genderAge={audience.gender_age} />
+        <ActivityHeatmap />
+      </div>
     </div>
   );
 }
