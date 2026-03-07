@@ -364,19 +364,10 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
           Por género
         </button>
       </div>
-      {byGender && (
-        <div className="flex items-center justify-center gap-5 mb-2">
-          <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-200 inline-block" />Hombres
-          </span>
-          <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-pink-200 inline-block" />Mujeres
-          </span>
-        </div>
-      )}
+
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="25%">
+          <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }} barCategoryGap="25%" barGap={2}>
             <XAxis dataKey="range" tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
             <YAxis tick={{ fill: "#9CA3AF", fontSize: 9 }} axisLine={false} tickLine={false} tickFormatter={fmtN} />
             <Tooltip
@@ -386,11 +377,11 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
             />
             {byGender ? (
               <>
-                <Bar dataKey="Mujeres" stackId="a" fill="#ffb347" radius={[0,0,0,0]} isAnimationActive animationDuration={450} />
-                <Bar dataKey="Hombres" stackId="a" fill="#ff6b00" radius={[4,4,0,0]} isAnimationActive animationDuration={450} />
+                <Bar dataKey="Hombres" fill="#93c5fd" radius={[4,4,0,0]} isAnimationActive animationDuration={600} />
+                <Bar dataKey="Mujeres" fill="#f9a8d4" radius={[4,4,0,0]} isAnimationActive animationDuration={600} />
               </>
             ) : (
-              <Bar dataKey="Total" radius={[4,4,0,0]} isAnimationActive animationDuration={550}>
+              <Bar dataKey="Total" radius={[4,4,0,0]} isAnimationActive animationDuration={600}>
                 {data.map((_, i) => (
                   <Cell key={i} fill={`hsl(27,100%,${62 - (i / data.length) * 22}%)`} />
                 ))}
@@ -398,6 +389,24 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
             )}
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Leyenda — solo visible en modo género */}
+      <div
+        className="flex items-center justify-center gap-5 mt-3"
+        style={{
+          opacity: byGender ? 1 : 0,
+          visibility: byGender ? "visible" : "hidden",
+          transition: "opacity 0.3s ease",
+          height: 24,
+        }}
+      >
+        <span className="text-[11px] text-[#999] flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#93c5fd" }} />Hombres
+        </span>
+        <span className="text-[11px] text-[#999] flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: "#f9a8d4" }} />Mujeres
+        </span>
       </div>
     </div>
   );
