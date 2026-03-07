@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { geoOrthographic, geoGraticule, geoPath } from "d3-geo";
+import { geoOrthographic, geoGraticule, geoPath, geoContains } from "d3-geo";
 import { feature } from "topojson-client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -197,8 +197,9 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
       const scaleY = GLOBE_SIZE / rect.height;
       const cx = (e.clientX - rect.left) * scaleX;
       const cy = (e.clientY - rect.top)  * scaleY;
-      const pg = geoPath(makeProj());
-      const found = s.geo.features.find((f: any) => f.id !== 10 && pg.contains(f, [cx, cy]));
+      const coords = makeProj().invert!([cx, cy]);
+      if (!coords) { tip.style.opacity = "0"; return; }
+      const found = s.geo.features.find((f: any) => f.id !== 10 && geoContains(f, coords));
       if (found) {
         const numId = String(found.id).padStart(3, "0");
         const a2    = NUM_TO_A2[numId];
@@ -241,7 +242,7 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
           width={GLOBE_SIZE}
           height={GLOBE_SIZE}
           className="h-auto"
-          style={{ cursor: "grab", maxHeight: "460px", width: "auto" }}
+          style={{ cursor: "grab", maxHeight: "540px", width: "auto" }}
         />
       </div>
       <div
