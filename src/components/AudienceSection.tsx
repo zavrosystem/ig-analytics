@@ -258,7 +258,7 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
   }, []);
 
   return (
-    <div className="h-full bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 self-start">
         Distribución geográfica
       </p>
@@ -529,11 +529,11 @@ export default function AudienceSection({
       style={{ opacity: visible ? 1 : 0 }}
     >
       {/* Fila 1: globo 60% + ciudades 40% */}
-      <div className="flex gap-4 items-stretch">
-        <div className="flex-1 min-h-0">
+      <div className="flex gap-4">
+        <div className="flex-1">
           <GlobeSection countries={audience.countries} />
         </div>
-        <div className="w-[40%] shrink-0 h-full">
+        <div className="w-[40%] shrink-0 self-stretch">
           <CitiesList cities={audience.cities} />
         </div>
       </div>
