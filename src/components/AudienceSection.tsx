@@ -14,6 +14,16 @@ const NUM_TO_A2: Record<string, string> = {
   "036":"AU","392":"JP","410":"KR","356":"IN","156":"CN","710":"ZA",
 };
 
+const A2_TO_NAME: Record<string, string> = {
+  MX:"México", US:"Estados Unidos", CO:"Colombia", AR:"Argentina",
+  ES:"España", CL:"Chile", PE:"Perú", VE:"Venezuela", BR:"Brasil",
+  EC:"Ecuador", GT:"Guatemala", CR:"Costa Rica", PA:"Panamá",
+  DO:"Rep. Dominicana", BO:"Bolivia", PY:"Paraguay", UY:"Uruguay",
+  CA:"Canadá", GB:"Reino Unido", DE:"Alemania", FR:"Francia",
+  IT:"Italia", NL:"Países Bajos", BE:"Bélgica", AU:"Australia",
+  JP:"Japón", KR:"Corea del Sur", IN:"India", CN:"China", ZA:"Sudáfrica",
+};
+
 interface AudienceData {
   gender_age: Record<string, number>;
   countries:  Record<string, number>;
@@ -88,43 +98,46 @@ const GLOBE_SIZE = 600;
 
 function GlobeSection({ countries }: { countries: Record<string, number> }) {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const tipRef     = useRef<HTMLDivElement>(null);
   const stateRef   = useRef({ rot: [0, -20] as [number, number], auto: true, drag: false, last: [0,0] as [number,number], geo: null as any, raf: 0 });
   const countryRef = useRef(countries);
   countryRef.current = countries;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const tip    = tipRef.current;
+    if (!canvas || !tip) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const s = stateRef.current;
     const graticuleFeature = geoGraticule().step([20, 20])();
 
-    function draw() {
-      const max = Math.max(...Object.values(countryRef.current), 1);
-      const proj = geoOrthographic()
+    function makeProj() {
+      return geoOrthographic()
         .scale(GLOBE_SIZE / 2.15)
         .translate([GLOBE_SIZE / 2, GLOBE_SIZE / 2])
         .rotate([s.rot[0], s.rot[1], 0])
         .clipAngle(90);
-      const pg = geoPath(proj, ctx);
+    }
+
+    function draw() {
+      const max  = Math.max(...Object.values(countryRef.current), 1);
+      const proj = makeProj();
+      const pg   = geoPath(proj, ctx);
 
       ctx.clearRect(0, 0, GLOBE_SIZE, GLOBE_SIZE);
 
-      // Ocean
       ctx.beginPath();
       pg({ type: "Sphere" } as any);
       ctx.fillStyle = "#dde1e6";
       ctx.fill();
 
-      // Graticule
       ctx.beginPath();
       pg(graticuleFeature as any);
       ctx.strokeStyle = "rgba(0,0,0,0.045)";
       ctx.lineWidth = 0.5;
       ctx.stroke();
 
-      // Countries
       if (s.geo) {
         s.geo.features
           .filter((f: any) => f.id !== 10)
@@ -143,7 +156,6 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
           });
       }
 
-      // Specular highlight
       const gr = ctx.createRadialGradient(
         GLOBE_SIZE * 0.35, GLOBE_SIZE * 0.3, 0,
         GLOBE_SIZE * 0.35, GLOBE_SIZE * 0.3, GLOBE_SIZE * 0.48
@@ -178,13 +190,41 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
     };
     const onUp = () => { s.drag = false; setTimeout(() => { s.auto = true; }, 2500); };
 
+    const onHover = (e: MouseEvent) => {
+      if (!s.geo || s.drag) { tip.style.opacity = "0"; return; }
+      const rect   = canvas.getBoundingClientRect();
+      const scaleX = GLOBE_SIZE / rect.width;
+      const scaleY = GLOBE_SIZE / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top)  * scaleY;
+      const pg = geoPath(makeProj());
+      const found = s.geo.features.find((f: any) => f.id !== 10 && pg.contains(f, [cx, cy]));
+      if (found) {
+        const numId = String(found.id).padStart(3, "0");
+        const a2    = NUM_TO_A2[numId];
+        const val   = a2 ? (countryRef.current[a2] ?? 0) : 0;
+        const name  = (a2 && A2_TO_NAME[a2]) || a2 || "–";
+        tip.innerHTML = `<span style="color:#f97316;font-size:10px;display:block;margin-bottom:2px">${name}</span>${val > 0 ? `<b>${fmtN(val)}</b> seguidores` : "Sin datos"}`;
+        tip.style.opacity = "1";
+        tip.style.left = (e.clientX + 14) + "px";
+        tip.style.top  = (e.clientY - 48) + "px";
+      } else {
+        tip.style.opacity = "0";
+      }
+    };
+    const onLeave = () => { tip.style.opacity = "0"; };
+
     canvas.addEventListener("mousedown", onDown);
+    canvas.addEventListener("mousemove", onHover);
+    canvas.addEventListener("mouseleave", onLeave);
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
 
     return () => {
       cancelAnimationFrame(s.raf);
       canvas.removeEventListener("mousedown", onDown);
+      canvas.removeEventListener("mousemove", onHover);
+      canvas.removeEventListener("mouseleave", onLeave);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
@@ -201,9 +241,18 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
           width={GLOBE_SIZE}
           height={GLOBE_SIZE}
           className="h-auto"
-          style={{ cursor: "grab", maxHeight: "360px", width: "auto" }}
+          style={{ cursor: "grab", maxHeight: "460px", width: "auto" }}
         />
       </div>
+      <div
+        ref={tipRef}
+        style={{
+          position: "fixed", background: "#1a1a1a", color: "#fff",
+          padding: "7px 12px", fontSize: "11px", fontWeight: 500,
+          borderRadius: "8px", pointerEvents: "none", opacity: 0,
+          transition: "opacity 0.1s", zIndex: 999, whiteSpace: "nowrap", lineHeight: 1.7,
+        }}
+      />
     </div>
   );
 }
