@@ -537,7 +537,18 @@ export default function AudienceSection({
 
   if (loading) return <Skeleton />;
 
-  const audience = data ?? MOCK_AUDIENCE;
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-gray-300 space-y-2">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" strokeWidth="1.5" />
+          <path strokeWidth="1.5" strokeLinecap="round" d="M12 8v4m0 4h.01" />
+        </svg>
+        <p className="text-sm font-medium text-gray-300">Sin datos de audiencia todavía</p>
+        <p className="text-xs text-gray-200">Se actualizan automáticamente cada 24 hrs</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -547,16 +558,16 @@ export default function AudienceSection({
       {/* Fila 1: globo 60% + ciudades 40% */}
       <div className="flex gap-4">
         <div className="flex-1">
-          <GlobeSection countries={audience.countries} />
+          <GlobeSection countries={data.countries} />
         </div>
         <div className="w-[40%] shrink-0 self-stretch">
-          <CitiesList cities={audience.cities} />
+          <CitiesList cities={data.cities} />
         </div>
       </div>
 
       {/* Fila 2: edad 50% + heatmap 50% */}
       <div className="grid grid-cols-2 gap-4">
-        <AgeChart genderAge={audience.gender_age} />
+        <AgeChart genderAge={data.gender_age} />
         <ActivityHeatmap posts={posts} />
       </div>
     </div>
