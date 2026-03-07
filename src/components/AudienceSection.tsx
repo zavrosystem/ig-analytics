@@ -443,13 +443,13 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      {/* Fila 1: ciudades 30% + globo 70% */}
+      {/* Fila 1: globo 70% + ciudades 30% */}
       <div className="flex gap-4 items-stretch">
-        <div className="w-[30%] shrink-0">
-          <CitiesList cities={audience.cities} />
-        </div>
         <div className="flex-1">
           <GlobeSection countries={audience.countries} />
+        </div>
+        <div className="w-[30%] shrink-0">
+          <CitiesList cities={audience.cities} />
         </div>
       </div>
 
