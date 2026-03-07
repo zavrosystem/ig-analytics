@@ -293,9 +293,9 @@ function CitiesList({ cities }: { cities: Record<string, number> }) {
   useEffect(() => { const t = setTimeout(() => setGo(true), 60); return () => clearTimeout(t); }, []);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+    <div className="h-full bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-5">Top ciudades</p>
-      <div className="space-y-[18px]">
+      <div className="flex-1 flex flex-col justify-between">
         {entries.map(([key, val], i) => {
           const pct = Math.round(val / total * 100);
           return (
@@ -528,12 +528,12 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      {/* Fila 1: globo 70% + ciudades 30% */}
+      {/* Fila 1: globo 60% + ciudades 40% */}
       <div className="flex gap-4 items-stretch">
-        <div className="flex-1">
+        <div className="flex-1 min-h-0">
           <GlobeSection countries={audience.countries} />
         </div>
-        <div className="w-[40%] shrink-0">
+        <div className="w-[40%] shrink-0 h-full">
           <CitiesList cities={audience.cities} />
         </div>
       </div>
