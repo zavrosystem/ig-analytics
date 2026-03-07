@@ -448,7 +448,7 @@ export default function AudienceSection({
         <div className="flex-1">
           <GlobeSection countries={audience.countries} />
         </div>
-        <div className="w-[30%] shrink-0">
+        <div className="w-[40%] shrink-0">
           <CitiesList cities={audience.cities} />
         </div>
       </div>
