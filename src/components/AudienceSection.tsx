@@ -413,33 +413,9 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
 }
 
 // ── Activity Heatmap ──────────────────────────────────────────────────────────
-const DAYS  = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-const HOURS = [0,3,6,9,12,15,18,21];
-
-function heatVal(d: number, h: number): number {
-  const isWeekend = d >= 5;
-  let base = 0;
-  if      (h === 0)  base = 15;
-  else if (h === 3)  base = 5;
-  else if (h === 6)  base = 18;
-  else if (h === 9)  base = isWeekend ? 42 : 62;
-  else if (h === 12) base = isWeekend ? 58 : 68;
-  else if (h === 15) base = isWeekend ? 72 : 48;
-  else if (h === 18) base = isWeekend ? 78 : 65;
-  else if (h === 21) base = isWeekend ? 88 : 92;
-  const noise = ((d * 7 + h) * 2654435761 >>> 0) % 18;
-  return Math.min(100, Math.max(2, base + noise - 9));
-}
-
-function heatColor(v: number): string {
-  if (v < 12) return "#f5f3f0";
-  if (v < 25) return "#ffe0c0";
-  if (v < 40) return "#ffcc95";
-  if (v < 55) return "#ffb347";
-  if (v < 70) return "#ff8c1a";
-  if (v < 85) return "#ff6b00";
-  return "#d45400";
-}
+const DAYS     = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+const DAY_JS   = [1, 2, 3, 4, 5, 6, 0]; // JS getDay() → column index
+const HOURS    = [0, 3, 6, 9, 12, 15, 18, 21];
 
 function fmtHour(h: number): string {
   if (h === 0)  return "12am";
@@ -448,47 +424,82 @@ function fmtHour(h: number): string {
   return `${h - 12}pm`;
 }
 
-function ActivityHeatmap() {
+function heatColor(ratio: number): string {
+  if (ratio <= 0)   return "#f5f3f0";
+  if (ratio < 0.15) return "#ffe0c0";
+  if (ratio < 0.35) return "#ffcc95";
+  if (ratio < 0.55) return "#ffb347";
+  if (ratio < 0.75) return "#ff8c1a";
+  if (ratio < 0.90) return "#ff6b00";
+  return "#d45400";
+}
+
+interface PostRow { engagement_rate: number; posted_at: string; }
+
+function ActivityHeatmap({ posts }: { posts: PostRow[] }) {
   const [go, setGo] = useState(false);
   useEffect(() => { const t = setTimeout(() => setGo(true), 100); return () => clearTimeout(t); }, []);
+
+  // Build 8×7 grid from real post data
+  const grid = HOURS.map(h =>
+    DAY_JS.map(jsDay => {
+      const relevant = posts.filter(p => {
+        const dt = new Date(p.posted_at);
+        return dt.getDay() === jsDay && Math.floor(dt.getHours() / 3) === HOURS.indexOf(h);
+      });
+      if (relevant.length === 0) return null;
+      return relevant.reduce((s, p) => s + (p.engagement_rate ?? 0), 0) / relevant.length;
+    })
+  );
+
+  const allVals = grid.flat().filter((v): v is number => v !== null);
+  const maxVal  = allVals.length ? Math.max(...allVals) : 1;
+  const hasData = allVals.length > 0;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-4">Horarios de actividad</p>
-      <div style={{ display: "grid", gridTemplateColumns: "44px repeat(7,1fr)", gap: "4px" }}>
-        <div />
-        {DAYS.map(d => (
-          <div key={d} className="text-[11px] text-gray-300 text-center pb-2">{d}</div>
-        ))}
-        {HOURS.map((h, hi) => (
-          <React.Fragment key={h}>
-            <div className="text-[11px] text-gray-300 flex items-center justify-end pr-2.5 h-9">{fmtHour(h)}</div>
-            {DAYS.map((_, d) => {
-              const val = heatVal(d, h);
-              return (
-                <div
-                  key={d}
-                  className="h-9 rounded-md"
-                  title={`${DAYS[d]} · ${fmtHour(h)}: ${val}%`}
-                  style={{
-                    background: heatColor(val),
-                    opacity: go ? 1 : 0,
-                    transform: go ? "scaleX(1)" : "scaleX(0.4)",
-                    transformOrigin: "left",
-                    transition: "opacity 0.3s ease, transform 0.3s ease",
-                    transitionDelay: `${hi * 80 + d * 30}ms`,
-                  }}
-                />
-              );
-            })}
-          </React.Fragment>
-        ))}
-      </div>
-      <div className="flex items-center justify-end gap-2 mt-4">
-        <span className="text-[10px] text-gray-300">Sin actividad</span>
-        <div className="w-24 h-2.5 rounded-full" style={{ background: "linear-gradient(90deg,#f0eeea,#fdc89a,#f97316,#c94d08)" }} />
-        <span className="text-[10px] text-gray-300">Pico máximo</span>
-      </div>
+      {!hasData && (
+        <p className="text-[11px] text-gray-300 text-center py-10">Sin datos de posts suficientes</p>
+      )}
+      {hasData && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "44px repeat(7,1fr)", gap: "4px" }}>
+            <div />
+            {DAYS.map(d => (
+              <div key={d} className="text-[11px] text-gray-300 text-center pb-2">{d}</div>
+            ))}
+            {HOURS.map((h, hi) => (
+              <React.Fragment key={h}>
+                <div className="text-[11px] text-gray-300 flex items-center justify-end pr-2.5 h-9">{fmtHour(h)}</div>
+                {grid[hi].map((val, d) => {
+                  const ratio = val !== null ? val / maxVal : 0;
+                  return (
+                    <div
+                      key={d}
+                      className="h-9 rounded-md"
+                      title={val !== null ? `${DAYS[d]} · ${fmtHour(h)}: ${val.toFixed(2)}% ER` : "Sin datos"}
+                      style={{
+                        background: heatColor(ratio),
+                        opacity: go ? 1 : 0,
+                        transform: go ? "scaleX(1)" : "scaleX(0.4)",
+                        transformOrigin: "left",
+                        transition: "opacity 0.3s ease, transform 0.3s ease",
+                        transitionDelay: `${hi * 80 + d * 30}ms`,
+                      }}
+                    />
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <span className="text-[10px] text-gray-300">Bajo ER</span>
+            <div className="w-24 h-2.5 rounded-full" style={{ background: "linear-gradient(90deg,#f0eeea,#fdc89a,#f97316,#c94d08)" }} />
+            <span className="text-[10px] text-gray-300">Alto ER</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -501,22 +512,27 @@ export default function AudienceSection({
   clientName?: string;
 }) {
   const [data,    setData]    = useState<AudienceData | null>(null);
+  const [posts,   setPosts]   = useState<PostRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (!clientId) { setLoading(false); setTimeout(() => setVisible(true), 50); return; }
-    supabase
-      .from("audience")
-      .select("gender_age, countries, cities")
-      .eq("client_id", clientId)
-      .maybeSingle()
-      .then(({ data: row, error }) => {
-        if (error) console.warn("audience fetch error:", error.message);
-        setData(row ?? null);
-        setLoading(false);
-        setTimeout(() => setVisible(true), 50);
-      });
+
+    const fetchAll = async () => {
+      const [audienceRes, postsRes] = await Promise.all([
+        supabase.from("audience").select("gender_age, countries, cities").eq("client_id", clientId).maybeSingle(),
+        supabase.from("posts").select("engagement_rate, posted_at").eq("client_id", clientId)
+          .order("posted_at", { ascending: false }).limit(200),
+      ]);
+      if (audienceRes.error) console.warn("audience fetch error:", audienceRes.error.message);
+      setData(audienceRes.data ?? null);
+      setPosts((postsRes.data ?? []) as PostRow[]);
+      setLoading(false);
+      setTimeout(() => setVisible(true), 50);
+    };
+
+    fetchAll();
   }, [clientId]);
 
   if (loading) return <Skeleton />;
@@ -541,7 +557,7 @@ export default function AudienceSection({
       {/* Fila 2: edad 50% + heatmap 50% */}
       <div className="grid grid-cols-2 gap-4">
         <AgeChart genderAge={audience.gender_age} />
-        <ActivityHeatmap />
+        <ActivityHeatmap posts={posts} />
       </div>
     </div>
   );

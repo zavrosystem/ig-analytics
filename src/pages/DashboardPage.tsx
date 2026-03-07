@@ -391,7 +391,7 @@ export default function DashboardPage({ session }: { session: Session }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 pt-4 space-y-0.5">
+        <nav className="flex-1 px-3 pt-4 space-y-0.5 overflow-y-auto">
           <NavItem
             icon={<LayoutDashboard className="w-full h-full" />}
             label="Dashboard"
@@ -422,12 +422,14 @@ export default function DashboardPage({ session }: { session: Session }) {
             active={activeNav === "audience"}
             onClick={() => setActiveNav("audience")}
           />
-          <NavItem
-            icon={<Kanban className="w-full h-full" />}
-            label="Pipeline"
-            active={activeNav === "pipeline"}
-            onClick={() => setActiveNav("pipeline")}
-          />
+          {isAdmin && (
+            <NavItem
+              icon={<Kanban className="w-full h-full" />}
+              label="Pipeline"
+              active={activeNav === "pipeline"}
+              onClick={() => setActiveNav("pipeline")}
+            />
+          )}
         </nav>
 
         {/* Filters */}
@@ -690,7 +692,7 @@ export default function DashboardPage({ session }: { session: Session }) {
             <AdsSection clientId={selectedClientId} />
           )}
 
-          {/* ── MENSAJES TAB ──────────────────────────────────────────────────── */}
+          {/* ── AUDIENCIA TAB ─────────────────────────────────────────────────── */}
           {activeNav === "audience" && (
             <AudienceSection clientId={selectedClientId} clientName={clientName} />
           )}
@@ -701,7 +703,7 @@ export default function DashboardPage({ session }: { session: Session }) {
 
           {/* ── PIPELINE TAB ──────────────────────────────────────────────────── */}
           {activeNav === "pipeline" && (
-            <PipelineSection />
+            <PipelineSection isAdmin={isAdmin} />
           )}
 
         </div>
