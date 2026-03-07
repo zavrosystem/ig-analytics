@@ -191,19 +191,17 @@ function GlobeSection({ countries }: { countries: Record<string, number> }) {
   }, []);
 
   return (
-    <div className="w-1/2 shrink-0 bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col items-center">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 self-start">
         Distribución geográfica
       </p>
-      <div className="flex-1 flex items-center justify-center">
-        <canvas
-          ref={canvasRef}
-          width={GLOBE_SIZE}
-          height={GLOBE_SIZE}
-          className="h-auto"
-          style={{ cursor: "grab", maxHeight: "280px", width: "auto" }}
-        />
-      </div>
+      <canvas
+        ref={canvasRef}
+        width={GLOBE_SIZE}
+        height={GLOBE_SIZE}
+        className="h-auto"
+        style={{ cursor: "grab", maxHeight: "320px", width: "auto" }}
+      />
     </div>
   );
 }
@@ -310,13 +308,13 @@ function AgeChart({ genderAge }: { genderAge: Record<string, number> }) {
             />
             {byGender ? (
               <>
-                <Bar dataKey="Mujeres" stackId="a" fill="#F9A8D4" radius={[0,0,0,0]} isAnimationActive animationDuration={450} />
-                <Bar dataKey="Hombres" stackId="a" fill="#93C5FD" radius={[4,4,0,0]} isAnimationActive animationDuration={450} />
+                <Bar dataKey="Mujeres" stackId="a" fill="#ffb347" radius={[0,0,0,0]} isAnimationActive animationDuration={450} />
+                <Bar dataKey="Hombres" stackId="a" fill="#ff6b00" radius={[4,4,0,0]} isAnimationActive animationDuration={450} />
               </>
             ) : (
               <Bar dataKey="Total" radius={[4,4,0,0]} isAnimationActive animationDuration={550}>
                 {data.map((_, i) => (
-                  <Cell key={i} fill="#f97316" fillOpacity={0.5 + (i / data.length) * 0.5} />
+                  <Cell key={i} fill={`hsl(27,100%,${62 - (i / data.length) * 22}%)`} />
                 ))}
               </Bar>
             )}
@@ -347,13 +345,13 @@ function heatVal(d: number, h: number): number {
 }
 
 function heatColor(v: number): string {
-  if (v < 12) return "#f0eeea";
-  if (v < 25) return "#fde0c4";
-  if (v < 40) return "#fdddb0";
-  if (v < 55) return "#fba75f";
-  if (v < 70) return "#f97316";
-  if (v < 85) return "#e05c05";
-  return "#c94d08";
+  if (v < 12) return "#f5f3f0";
+  if (v < 25) return "#ffe0c0";
+  if (v < 40) return "#ffcc95";
+  if (v < 55) return "#ffb347";
+  if (v < 70) return "#ff8c1a";
+  if (v < 85) return "#ff6b00";
+  return "#d45400";
 }
 
 function fmtHour(h: number): string {
@@ -443,17 +441,17 @@ export default function AudienceSection({
       className="space-y-4 transition-opacity duration-500"
       style={{ opacity: visible ? 1 : 0 }}
     >
-      {/* Fila 1: globo + edad */}
-      <div className="flex gap-4 items-stretch" style={{ minHeight: "320px" }}>
-        <GlobeSection countries={audience.countries} />
+      {/* Fila 1: globo full width */}
+      <GlobeSection countries={audience.countries} />
+
+      {/* Fila 2: ciudades + edad */}
+      <div className="grid grid-cols-2 gap-4">
+        <CitiesList cities={audience.cities} />
         <AgeChart genderAge={audience.gender_age} />
       </div>
 
-      {/* Fila 2: ciudades + heatmap */}
-      <div className="grid grid-cols-2 gap-4">
-        <CitiesList cities={audience.cities} />
-        <ActivityHeatmap />
-      </div>
+      {/* Fila 3: heatmap full width */}
+      <ActivityHeatmap />
     </div>
   );
 }
