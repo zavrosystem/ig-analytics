@@ -692,9 +692,7 @@ export default function DashboardPage({ session }: { session: Session }) {
 
           {/* ── MENSAJES TAB ──────────────────────────────────────────────────── */}
           {activeNav === "audience" && (
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <AudienceSection clientId={selectedClientId} clientName={clientName} />
-            </div>
+            <AudienceSection clientId={selectedClientId} clientName={clientName} />
           )}
 
           {activeNav === "messages" && (
