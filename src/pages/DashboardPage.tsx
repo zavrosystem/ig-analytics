@@ -37,7 +37,59 @@ interface PostRow {
   posted_at: string;
   caption: string | null;
 }
-interface ClientInfo { id: string; name: string; }
+interface ClientFeatures {
+  ads: boolean;
+  messages: boolean;
+  pipeline: boolean;
+  audience: boolean;
+}
+interface ClientInfo { id: string; name: string; features?: ClientFeatures; }
+
+// ── Maintenance Page ───────────────────────────────────────────────────────────
+function MaintenancePage({ msg }: { msg: string }) {
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="flex flex-col items-center text-center max-w-sm">
+        {/* Logo */}
+        <img src="/logo.png" alt="Logo" className="w-16 h-16 rounded-2xl object-cover mb-8 shadow-md" />
+
+        {/* Illustration */}
+        <svg width="180" height="140" viewBox="0 0 180 140" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-8 opacity-80">
+          {/* Gear big */}
+          <circle cx="75" cy="70" r="28" stroke="#FF7200" strokeWidth="3" fill="none" strokeDasharray="6 4" className="animate-spin" style={{ animationDuration: "12s" }} />
+          <circle cx="75" cy="70" r="12" fill="#FFF0E5" stroke="#FF7200" strokeWidth="2.5" />
+          <circle cx="75" cy="70" r="5" fill="#FF7200" />
+          {/* Gear small */}
+          <circle cx="116" cy="52" r="17" stroke="#FFAA60" strokeWidth="2.5" fill="none" strokeDasharray="5 3" className="animate-spin" style={{ animationDuration: "8s", animationDirection: "reverse" }} />
+          <circle cx="116" cy="52" r="7" fill="#FFF0E5" stroke="#FFAA60" strokeWidth="2" />
+          <circle cx="116" cy="52" r="3" fill="#FFAA60" />
+          {/* Wrench */}
+          <path d="M40 100 L60 80" stroke="#E5E7EB" strokeWidth="6" strokeLinecap="round" />
+          <circle cx="37" cy="103" r="8" fill="#E5E7EB" />
+          {/* Dots */}
+          <circle cx="130" cy="90" r="4" fill="#FFF0E5" />
+          <circle cx="145" cy="75" r="3" fill="#FFD4A8" />
+          <circle cx="120" cy="105" r="2.5" fill="#FFD4A8" />
+          {/* Stars/sparkles */}
+          <path d="M30 45 L32 40 L34 45 L39 47 L34 49 L32 54 L30 49 L25 47 Z" fill="#FFD4A8" />
+          <path d="M148 110 L149.5 107 L151 110 L154 111.5 L151 113 L149.5 116 L148 113 L145 111.5 Z" fill="#FFE8CC" />
+        </svg>
+
+        {/* Text */}
+        <h1 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight">
+          Estamos en mantenimiento
+        </h1>
+        <p className="text-sm text-gray-500 leading-relaxed mb-2">
+          {msg}
+        </p>
+        <p className="text-xs text-gray-400 mt-4">
+          Si tienes dudas escríbenos —{" "}
+          <span className="text-[#FF7200] font-medium">estamos al pendiente.</span>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const PERIOD_OPTIONS = [
   { label: "7 días",  value: "7"  },
@@ -252,22 +304,40 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [convCount, setConvCount]               = useState(0);
   const [totalSpend, setTotalSpend]             = useState(0);
   const [followerView, setFollowerView]         = useState<"growth" | "loss">("growth");
+  const [features, setFeatures]                 = useState<ClientFeatures>({ ads: true, messages: true, pipeline: true, audience: true });
+  const [maintenanceMode, setMaintenanceMode]   = useState(false);
+  const [maintenanceMsg, setMaintenanceMsg]     = useState("Estamos realizando mejoras. Regresamos en unos momentos.");
 
   useEffect(() => {
     const load = async () => {
+      // Fetch settings (maintenance mode)
+      const { data: settingsData } = await supabase
+        .from("settings")
+        .select("maintenance_mode, maintenance_msg")
+        .eq("id", "global")
+        .maybeSingle();
+      if (settingsData?.maintenance_mode) {
+        setMaintenanceMode(true);
+        setMaintenanceMsg(settingsData.maintenance_msg ?? "Estamos realizando mejoras. Regresamos en unos momentos.");
+      }
+
       const { data, error } = await supabase
         .from("client_users")
-        .select("client_id, is_admin, clients(id, name)")
+        .select("client_id, is_admin, clients(id, name, features)")
         .eq("user_id", session.user.id)
         .maybeSingle();
       if (error || !data) { setLoading(false); return; }
       const client = data.clients as unknown as ClientInfo;
-      setIsAdmin(data.is_admin);
+      const admin = data.is_admin;
+      setIsAdmin(admin);
       setClientName(client?.name ?? "");
       setSelectedClientId(data.client_id);
-      if (data.is_admin) {
-        const { data: clients } = await supabase.from("clients").select("id, name").order("name");
-        setAllClients(clients ?? []);
+      if (client?.features) {
+        setFeatures(client.features as ClientFeatures);
+      }
+      if (admin) {
+        const { data: clients } = await supabase.from("clients").select("id, name, features").order("name");
+        setAllClients((clients ?? []) as ClientInfo[]);
       }
       setLoading(false);
     };
@@ -321,8 +391,10 @@ export default function DashboardPage({ session }: { session: Session }) {
   useEffect(() => { loadMessages(); }, [loadMessages]);
 
   const handleClientChange = (id: string) => {
+    const client = allClients.find((c) => c.id === id);
     setSelectedClientId(id);
-    setClientName(allClients.find((c) => c.id === id)?.name ?? "");
+    setClientName(client?.name ?? "");
+    if (client?.features) setFeatures(client.features as ClientFeatures);
   };
 
   // ── Computed ─────────────────────────────────────────────────────────────────
@@ -373,6 +445,11 @@ export default function DashboardPage({ session }: { session: Session }) {
     );
   }
 
+  // Non-admins see maintenance page when enabled
+  if (maintenanceMode && !isAdmin) {
+    return <MaintenancePage msg={maintenanceMsg} />;
+  }
+
   return (
     <div className="flex h-screen bg-[#F6F5F3] overflow-hidden">
 
@@ -404,25 +481,31 @@ export default function DashboardPage({ session }: { session: Session }) {
             active={activeNav === "reels"}
             onClick={() => setActiveNav("reels")}
           />
-          <NavItem
-            icon={<Megaphone className="w-full h-full" />}
-            label="Pagado"
-            active={activeNav === "ads"}
-            onClick={() => setActiveNav("ads")}
-          />
-          <NavItem
-            icon={<MessageCircle className="w-full h-full" />}
-            label="Mensajes"
-            active={activeNav === "messages"}
-            onClick={() => setActiveNav("messages")}
-          />
-          <NavItem
-            icon={<PieChart className="w-full h-full" />}
-            label="Audiencia"
-            active={activeNav === "audience"}
-            onClick={() => setActiveNav("audience")}
-          />
-          {isAdmin && (
+          {(isAdmin || features.ads) && (
+            <NavItem
+              icon={<Megaphone className="w-full h-full" />}
+              label="Pagado"
+              active={activeNav === "ads"}
+              onClick={() => setActiveNav("ads")}
+            />
+          )}
+          {(isAdmin || features.messages) && (
+            <NavItem
+              icon={<MessageCircle className="w-full h-full" />}
+              label="Mensajes"
+              active={activeNav === "messages"}
+              onClick={() => setActiveNav("messages")}
+            />
+          )}
+          {(isAdmin || features.audience) && (
+            <NavItem
+              icon={<PieChart className="w-full h-full" />}
+              label="Audiencia"
+              active={activeNav === "audience"}
+              onClick={() => setActiveNav("audience")}
+            />
+          )}
+          {(isAdmin || features.pipeline) && (
             <NavItem
               icon={<Kanban className="w-full h-full" />}
               label="Pipeline"
