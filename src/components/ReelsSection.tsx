@@ -789,7 +789,7 @@ function Pagination({ page, total, pageSize, onChange }: {
 
 // ── Main Export ────────────────────────────────────────────────────────────────
 const PREVIEW   = 6;   // items shown in summary view
-const PAGE_SIZE = 12;  // items per page in expanded view
+const PAGE_SIZE = 24;  // items per page in expanded view (4 rows of 6)
 
 export default function ContentSection({ clientId, clientName = "" }: { clientId: string | null; clientName?: string }) {
   const isBotanico = clientName.toLowerCase().includes("botanico") || clientName.toLowerCase().includes("botánico");
