@@ -24,6 +24,7 @@ interface Post {
   comments_count: number;
   saved: number;
   shares: number;
+  reposts: number;
   reach: number;
   impressions: number;
   video_views: number;
@@ -34,6 +35,7 @@ interface Post {
   duration_ms: number | null;
   non_follower_reach_pct: number | null;
   qualified_engagement_rate: number | null;
+  hook_efficiency: number | null;
   plays: number;
 }
 
@@ -339,16 +341,11 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
     ? post.avg_watch_time_ms! / effectiveDuration * 100
     : null;
 
-  // Hook Efficiency = video_views / plays (% que aguantó el hook, ≥3s)
-  // Fallback: modelo exponencial P(ver ≥ 3s) = e^(-3000 / avg_watch_time_ms)
-  const hookEfficiencyReal = (post.video_views > 0 && hasPlays)
-    ? post.video_views / post.plays! * 100
-    : null;
-  const hookEfficiencyEstimated = hasAvgWatch
+  // Hook Efficiency — use DB value (1 - reels_skip_rate) when available
+  const hookEfficiency = post.hook_efficiency ?? (hasAvgWatch
     ? Math.exp(-5000 / post.avg_watch_time_ms!) * 100
-    : null;
-  const hookEfficiency = hookEfficiencyReal ?? hookEfficiencyEstimated;
-  const hookEfficiencyIsEstimated = hookEfficiencyReal === null && hookEfficiencyEstimated !== null;
+    : null);
+  const hookEfficiencyIsEstimated = post.hook_efficiency === null;
 
   // Attention Depth Score = hook_efficiency × retention_score / 100
   const attentionDepth = hookEfficiency !== null && retentionScore !== null
@@ -459,7 +456,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label={`Engagement Rate (${denominatorLabel})`} value={pct(totalEng, denominator)} tooltip={`Total interacciones / ${denominatorLabel}`} />
             <MetricRow label="Engagement Rate (alcance)" value={pct(totalEng, post.reach)}       tooltip="Total interacciones / Cuentas alcanzadas" />
             <MetricRow label="Save Rate"                 value={pct(post.saved, denominator)}          tooltip={`Guardados / ${denominatorLabel}`} />
-            <MetricRow label="Share Rate"                value={pct(post.shares, denominator)}          tooltip={`Compartidos / ${denominatorLabel}`} />
+            <MetricRow label="Share Rate"                value={pct(post.shares + post.reposts, denominator)} tooltip={`(Compartidos + Reposts) / ${denominatorLabel}`} />
             <MetricRow label="Like Rate"                 value={pct(post.like_count, denominator)}      tooltip={`Likes / ${denominatorLabel}`} />
             <MetricRow label="Comment Rate"              value={pct(post.comments_count, denominator)}  tooltip={`Comentarios / ${denominatorLabel}`} />
             <MetricRow label="Repeat Rate"               value={ratio(denominator, post.reach)}         tooltip={`${denominatorLabel} / Cuentas alcanzadas`} />
@@ -475,8 +472,8 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
           <MetricSection title="Conversión">
-            <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares, post.reach)}                  tooltip="Compartidos / Cuentas alcanzadas" />
-            <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.shares, denominator)}   tooltip={`Compartidos / ${denominatorLabel}`} />
+            <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares + post.reposts, post.reach)}                  tooltip="(Compartidos + Reposts) / Cuentas alcanzadas" />
+            <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.shares + post.reposts, denominator)}   tooltip={`(Compartidos + Reposts) / ${denominatorLabel}`} />
             <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, denominator)} tooltip={`(Comentarios + Guardados) / ${denominatorLabel}`} />
           </MetricSection>
 
@@ -811,7 +808,7 @@ export default function ContentSection({ clientId, clientName = "" }: { clientId
     if (!clientId) { setLoadingPosts(false); return; }
     supabase
       .from("posts")
-      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reach, impressions, video_views, profile_visits, follows, engagement_rate, avg_watch_time_ms, duration_ms, non_follower_reach_pct, qualified_engagement_rate, plays")
+      .select("id, post_id, media_type, permalink, caption, thumbnail_url, posted_at, like_count, comments_count, saved, shares, reposts, reach, impressions, video_views, profile_visits, follows, engagement_rate, avg_watch_time_ms, duration_ms, non_follower_reach_pct, qualified_engagement_rate, hook_efficiency, plays")
       .eq("client_id", clientId)
       .in("media_type", ["IMAGE", "CAROUSEL_ALBUM", "VIDEO", "REELS"])
       .order("posted_at", { ascending: false })
