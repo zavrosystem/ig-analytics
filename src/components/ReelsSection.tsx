@@ -473,7 +473,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
           <MetricSection title="Conversión">
             <MetricRow label="Virality Coefficient (organic)" value={pct(post.shares + post.reposts, post.reach)}                  tooltip="(Compartidos + Reposts) / Cuentas alcanzadas" />
-            <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.shares + post.reposts, denominator)}   tooltip={`(Compartidos + Reposts) / ${denominatorLabel}`} />
+            <MetricRow label={`Virality Coefficient (${denominatorLabel})`} value={pct(post.reposts + post.saved, denominator)}   tooltip={`(Reposts + Guardados) / ${denominatorLabel}`} />
             <MetricRow label="Authority Signal"               value={pct(post.comments_count + post.saved, denominator)} tooltip={`(Comentarios + Guardados) / ${denominatorLabel}`} />
           </MetricSection>
 
