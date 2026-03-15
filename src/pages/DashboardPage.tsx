@@ -5,6 +5,7 @@ import MessagesSection from "@/components/MessagesSection";
 import AdsSection from "@/components/AdsSection";
 import AudienceSection from "@/components/AudienceSection";
 import PipelineSection from "@/components/PipelineSection";
+import ConfigSection from "@/components/ConfigSection";
 import { Session } from "@supabase/supabase-js";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -16,7 +17,7 @@ import {
 import {
   Users, Eye, BarChart2, UserCircle,
   LogOut, TrendingUp, TrendingDown, LayoutDashboard, Film, Megaphone,
-  MessageCircle, DollarSign, PieChart, Kanban,
+  MessageCircle, DollarSign, PieChart, Kanban, Settings,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
@@ -300,7 +301,7 @@ export default function DashboardPage({ session }: { session: Session }) {
   const [allClients, setAllClients]             = useState<ClientInfo[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading]                   = useState(true);
-  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages" | "audience" | "pipeline">("dashboard");
+  const [activeNav, setActiveNav]               = useState<"dashboard" | "reels" | "ads" | "messages" | "audience" | "pipeline" | "config">("dashboard");
   const [convCount, setConvCount]               = useState(0);
   const [totalSpend, setTotalSpend]             = useState(0);
   const [followerView, setFollowerView]         = useState<"growth" | "loss">("growth");
@@ -513,6 +514,14 @@ export default function DashboardPage({ session }: { session: Session }) {
               onClick={() => setActiveNav("pipeline")}
             />
           )}
+          {isAdmin && (
+            <NavItem
+              icon={<Settings className="w-full h-full" />}
+              label="Config"
+              active={activeNav === "config"}
+              onClick={() => setActiveNav("config")}
+            />
+          )}
         </nav>
 
         {/* Filters */}
@@ -581,6 +590,7 @@ export default function DashboardPage({ session }: { session: Session }) {
                   : activeNav === "ads" ? "Contenido pagado"
                   : activeNav === "audience" ? "Audiencia"
                   : activeNav === "pipeline" ? "Pipeline"
+                  : activeNav === "config" ? "Configuración"
                   : "Mensajes"}
               </h1>
               {activeNav === "dashboard" && dateRange && (
@@ -787,6 +797,11 @@ export default function DashboardPage({ session }: { session: Session }) {
           {/* ── PIPELINE TAB ──────────────────────────────────────────────────── */}
           {activeNav === "pipeline" && (
             <PipelineSection isAdmin={isAdmin} />
+          )}
+
+          {/* ── CONFIG TAB ────────────────────────────────────────────────────── */}
+          {activeNav === "config" && isAdmin && (
+            <ConfigSection />
           )}
 
         </div>
