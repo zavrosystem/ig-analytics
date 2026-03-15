@@ -467,7 +467,7 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
 
           {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
           <MetricSection title="Calidad de audiencia">
-            <MetricRow label="New Audience Penetration"    value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="% del alcance proveniente de no seguidores" />
+            <MetricRow label="New Audience Penetration (mín.)" value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="Límite inferior: (alcance − seguidores) / alcance. El valor real es igual o mayor — Meta no expone el desglose exacto para cuentas pequeñas." />
           </MetricSection>
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
