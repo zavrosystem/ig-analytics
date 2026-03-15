@@ -514,15 +514,19 @@ export default function DashboardPage({ session }: { session: Session }) {
               onClick={() => setActiveNav("pipeline")}
             />
           )}
-          {isAdmin && (
+        </nav>
+
+        {/* Config — just above the divider */}
+        {isAdmin && (
+          <div className="px-3 pb-2">
             <NavItem
               icon={<Settings className="w-full h-full" />}
               label="Config"
               active={activeNav === "config"}
               onClick={() => setActiveNav("config")}
             />
-          )}
-        </nav>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="px-3 py-4 border-t border-gray-100 space-y-3">
