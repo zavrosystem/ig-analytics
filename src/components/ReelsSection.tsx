@@ -325,7 +325,7 @@ function ratio(num: number, den: number): string {
 // ── Video Post Detail (Reels) ─────────────────────────────────────────────────
 function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; onClose: () => void }) {
   const gradient     = GRADIENTS[index % GRADIENTS.length];
-  const totalEng     = post.like_count + post.comments_count + post.saved + post.shares;
+  const totalEng     = post.like_count + post.comments_count + post.saved + post.shares + post.reposts;
   const hasWatchData = !!(post.avg_watch_time_ms && post.duration_ms && post.duration_ms > 0);
   const hasAvgWatch  = !!(post.avg_watch_time_ms && post.avg_watch_time_ms > 0);
   const hasPlays     = !!(post.plays && post.plays > 0);
