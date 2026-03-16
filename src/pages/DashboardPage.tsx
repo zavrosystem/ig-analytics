@@ -52,11 +52,11 @@ function MaintenancePage({ msg }: { msg: string }) {
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="flex flex-col items-center text-center max-w-lg">
         <img src="/logo.png" alt="Logo" className="w-14 h-14 rounded-xl object-cover mb-10 shadow-sm" />
-        <h1 className="text-4xl font-black text-gray-900 mb-5 leading-tight uppercase tracking-tight">
-          ¡Lamentamos<br />las molestias!
+        <h1 className="text-4xl font-black text-gray-900 mb-5 uppercase tracking-tight whitespace-nowrap">
+          ¡Lamentamos las molestias!
         </h1>
-        <p className="text-lg text-gray-500 leading-relaxed mb-3">{msg}</p>
-        <p className="text-base text-gray-400">Pronto estará disponible nuevamente.</p>
+        <p className="text-lg text-gray-500 mb-2 whitespace-nowrap">{msg}</p>
+        <p className="text-base text-gray-400 whitespace-nowrap">Pronto estará disponible nuevamente.</p>
       </div>
     </div>
   );
