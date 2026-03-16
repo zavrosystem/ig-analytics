@@ -52,7 +52,6 @@ function MaintenancePage({ msg }: { msg: string }) {
     <div className="min-h-screen bg-white flex items-center justify-center px-6">
       <div className="flex flex-col items-center text-center max-w-lg">
         <img src="/logo.png" alt="Logo" className="w-14 h-14 rounded-xl object-cover mb-10 shadow-sm" />
-        <p className="text-6xl mb-6 text-gray-800">:(</p>
         <h1 className="text-4xl font-black text-gray-900 mb-5 leading-tight uppercase tracking-tight">
           ¡Lamentamos<br />las molestias!
         </h1>
