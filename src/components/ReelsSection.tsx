@@ -465,10 +465,6 @@ function VideoPostDetail({ post, index, onClose }: { post: Post; index: number; 
             <MetricRow label="Retention Score"           value={retentionScore   !== null ? retentionScore.toFixed(2)   + "%" : "--"} tooltip="Tiempo promedio de reproducción / Duración total del video" />
           </MetricSection>
 
-          {/* ── CALIDAD DE AUDIENCIA ──────────────────────────────────── */}
-          <MetricSection title="Calidad de audiencia">
-            <MetricRow label="New Audience Penetration (est.)" value={post.non_follower_reach_pct != null ? post.non_follower_reach_pct.toFixed(2) + "%" : "--"} tooltip="Estimado: (alcance − seguidores) / alcance cuando es positivo; si no, proxy vía visitas al perfil ÷ 4% tasa de visita típica de no-seguidores. Meta no expone el desglose exacto para cuentas pequeñas." />
-          </MetricSection>
 
           {/* ── CONVERSIÓN ───────────────────────────────────────────── */}
           <MetricSection title="Conversión">
