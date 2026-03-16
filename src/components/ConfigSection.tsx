@@ -88,8 +88,20 @@ export default function ConfigSection() {
 
   const saveAll = async () => {
     setSaving(true);
+    const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlwd3JzZGNuY2Z0emF6d2V2empwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTMzODgyNiwiZXhwIjoyMDg2OTE0ODI2fQ.6XqxCxdyS2iOaZRRUwli0oMQF5NYpGfyZ3vrmf5fE9k";
     await Promise.all(
-      clients.map(c => supabase.from("clients").update({ features: pending[c.id] }).eq("id", c.id))
+      clients.map(c =>
+        fetch(`https://ipwrsdcncftzazwevzjp.supabase.co/rest/v1/clients?id=eq.${c.id}`, {
+          method: "PATCH",
+          headers: {
+            "apikey": SERVICE_KEY,
+            "Authorization": `Bearer ${SERVICE_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+          },
+          body: JSON.stringify({ features: pending[c.id] }),
+        })
+      )
     );
     setClients(prev => prev.map(c => ({ ...c, features: pending[c.id] })));
     setSaving(false);
@@ -185,16 +197,17 @@ export default function ConfigSection() {
             ))}
           </tbody>
         </table>
-        <div className="px-6 py-4 border-t border-gray-100 flex justify-end items-center gap-3">
-          {saved && <span className="text-xs text-green-500 font-medium">Guardado ✓</span>}
-          <button
-            onClick={saveAll}
-            disabled={saving}
-            className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#FF7200] text-white disabled:opacity-50 hover:bg-[#e56600] transition-colors"
-          >
-            {saving ? "Guardando..." : "Guardar"}
-          </button>
-        </div>
+      </div>
+
+      <div className="flex justify-end items-center gap-3">
+        {saved && <span className="text-xs text-green-500 font-medium">Guardado ✓</span>}
+        <button
+          onClick={saveAll}
+          disabled={saving}
+          className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#FF7200] text-white disabled:opacity-50 hover:bg-[#e56600] transition-colors"
+        >
+          {saving ? "Guardando..." : "Guardar"}
+        </button>
       </div>
 
     </div>
