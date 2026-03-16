@@ -49,91 +49,15 @@ interface ClientInfo { id: string; name: string; features?: ClientFeatures; }
 // ── Maintenance Page ───────────────────────────────────────────────────────────
 function MaintenancePage({ msg }: { msg: string }) {
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-8">
-      <div className="flex flex-col md:flex-row items-center gap-16 max-w-3xl w-full">
-
-        {/* Illustration */}
-        <div className="flex-shrink-0">
-          <svg width="260" height="220" viewBox="0 0 260 220" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Ground platform */}
-            <ellipse cx="130" cy="200" rx="110" ry="14" fill="#F3F4F6" />
-
-            {/* Barrier board - yellow/black stripes */}
-            <rect x="60" y="110" width="140" height="38" rx="4" fill="#FBBF24" />
-            <rect x="60" y="110" width="23" height="38" rx="0" fill="#1F2937" opacity="0.6" />
-            <rect x="106" y="110" width="23" height="38" fill="#1F2937" opacity="0.6" />
-            <rect x="152" y="110" width="23" height="38" fill="#1F2937" opacity="0.6" />
-            <rect x="198" y="110" width="2" height="38" fill="#1F2937" opacity="0.2" />
-            {/* Barrier legs */}
-            <rect x="78" y="148" width="8" height="40" rx="3" fill="#D1D5DB" />
-            <rect x="174" y="148" width="8" height="40" rx="3" fill="#D1D5DB" />
-            {/* Barrier feet */}
-            <rect x="68" y="184" width="28" height="10" rx="4" fill="#9CA3AF" />
-            <rect x="164" y="184" width="28" height="10" rx="4" fill="#9CA3AF" />
-
-            {/* Traffic cones */}
-            <polygon points="46,190 62,190 56,155 52,155" fill="#FF7200" />
-            <rect x="44" y="188" width="20" height="6" rx="2" fill="#E5E7EB" />
-            <rect x="48" y="174" width="12" height="3" fill="white" opacity="0.6" />
-            <polygon points="196,190 212,190 206,155 202,155" fill="#FF7200" />
-            <rect x="194" y="188" width="20" height="6" rx="2" fill="#E5E7EB" />
-            <rect x="198" y="174" width="12" height="3" fill="white" opacity="0.6" />
-
-            {/* Worker left - vest orange */}
-            <circle cx="95" cy="62" r="14" fill="#FDDCAE" />
-            <rect x="81" y="76" width="28" height="36" rx="6" fill="#FF7200" />
-            <rect x="68" y="80" width="14" height="24" rx="5" fill="#FF7200" />
-            <rect x="99" y="80" width="14" height="24" rx="5" fill="#FF7200" />
-            <rect x="84" y="110" width="11" height="30" rx="4" fill="#374151" />
-            <rect x="96" y="110" width="11" height="30" rx="4" fill="#374151" />
-            {/* Hard hat */}
-            <ellipse cx="95" cy="50" rx="17" ry="9" fill="#FBBF24" />
-            <rect x="78" y="52" width="34" height="6" rx="3" fill="#FBBF24" />
-            {/* Stop sign hand */}
-            <circle cx="68" cy="80" r="8" fill="#EF4444" />
-            <text x="64" y="84" fontSize="8" fill="white" fontWeight="bold">✋</text>
-
-            {/* Worker right - suit */}
-            <circle cx="165" cy="60" r="14" fill="#FDDCAE" />
-            <rect x="151" y="74" width="28" height="38" rx="6" fill="#374151" />
-            <rect x="138" y="78" width="14" height="26" rx="5" fill="#374151" />
-            <rect x="166" y="78" width="14" height="26" rx="5" fill="#374151" />
-            <rect x="154" y="110" width="11" height="30" rx="4" fill="#1F2937" />
-            <rect x="166" y="110" width="11" height="30" rx="4" fill="#1F2937" />
-            {/* Tie */}
-            <rect x="161" y="76" width="8" height="22" rx="3" fill="#FF7200" />
-            {/* Clipboard */}
-            <rect x="172" y="82" width="18" height="22" rx="3" fill="#F9FAFB" stroke="#D1D5DB" strokeWidth="1.5" />
-            <rect x="174" y="87" width="12" height="2" rx="1" fill="#D1D5DB" />
-            <rect x="174" y="91" width="10" height="2" rx="1" fill="#D1D5DB" />
-            <rect x="174" y="95" width="11" height="2" rx="1" fill="#D1D5DB" />
-            {/* Helmet */}
-            <ellipse cx="165" cy="48" rx="17" ry="9" fill="#9CA3AF" />
-            <rect x="148" y="50" width="34" height="6" rx="3" fill="#9CA3AF" />
-
-            {/* Sparkles */}
-            <path d="M30 30 L32 24 L34 30 L40 32 L34 34 L32 40 L30 34 L24 32 Z" fill="#FED7AA" />
-            <path d="M222 20 L223.5 16 L225 20 L229 21.5 L225 23 L223.5 27 L222 23 L218 21.5 Z" fill="#FED7AA" />
-            <circle cx="42" cy="70" r="3" fill="#FBBF24" opacity="0.5" />
-            <circle cx="215" cy="80" r="2.5" fill="#FF7200" opacity="0.4" />
-          </svg>
-        </div>
-
-        {/* Text side */}
-        <div className="flex flex-col items-start text-left">
-          <img src="/logo.png" alt="Logo" className="w-12 h-12 rounded-xl object-cover mb-6 shadow-sm" />
-          <p className="text-4xl mb-3">:(</p>
-          <h1 className="text-3xl font-black text-gray-900 mb-4 leading-tight uppercase tracking-tight">
-            ¡Lamentamos<br />las molestias!
-          </h1>
-          <p className="text-base text-gray-500 leading-relaxed mb-2">
-            {msg}
-          </p>
-          <p className="text-sm text-gray-400 mt-2">
-            Pronto estará disponible nuevamente.
-          </p>
-        </div>
-
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className="flex flex-col items-center text-center max-w-lg">
+        <img src="/logo.png" alt="Logo" className="w-14 h-14 rounded-xl object-cover mb-10 shadow-sm" />
+        <p className="text-6xl mb-6 text-gray-800">:(</p>
+        <h1 className="text-4xl font-black text-gray-900 mb-5 leading-tight uppercase tracking-tight">
+          ¡Lamentamos<br />las molestias!
+        </h1>
+        <p className="text-lg text-gray-500 leading-relaxed mb-3">{msg}</p>
+        <p className="text-base text-gray-400">Pronto estará disponible nuevamente.</p>
       </div>
     </div>
   );
