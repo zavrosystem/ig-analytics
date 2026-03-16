@@ -42,11 +42,13 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function ConfigSection() {
-  const [clients, setClients]             = useState<ClientRow[]>([]);
-  const [maintenance, setMaintenance]     = useState(false);
+  const [clients, setClients]               = useState<ClientRow[]>([]);
+  const [pending, setPending]               = useState<Record<string, ClientFeatures>>({});
+  const [savedRows, setSavedRows]           = useState<Record<string, boolean>>({});
+  const [savingRow, setSavingRow]           = useState<string | null>(null);
+  const [maintenance, setMaintenance]       = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("");
-  const [saving, setSaving]               = useState<string | null>(null); // id being saved
-  const [loading, setLoading]             = useState(true);
+  const [loading, setLoading]               = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -59,10 +61,15 @@ export default function ConfigSection() {
         setMaintenanceMsg(settingsData.maintenance_msg ?? "");
       }
       if (clientsData) {
-        setClients(clientsData.map((c: any) => ({
+        const rows = clientsData.map((c: any) => ({
           ...c,
           features: c.features ?? { ads: true, messages: true, pipeline: true, audience: true },
-        })));
+        }));
+        setClients(rows);
+        // Init pending with DB values
+        const init: Record<string, ClientFeatures> = {};
+        rows.forEach((r: ClientRow) => { init[r.id] = { ...r.features }; });
+        setPending(init);
       }
       setLoading(false);
     };
@@ -74,13 +81,27 @@ export default function ConfigSection() {
     await supabase.from("settings").update({ maintenance_mode: val, updated_at: new Date().toISOString() }).eq("id", "global");
   };
 
-  const toggleFeature = async (clientId: string, key: keyof ClientFeatures, val: boolean) => {
-    setSaving(clientId + key);
-    const client = clients.find(c => c.id === clientId)!;
-    const updated = { ...client.features, [key]: val };
-    setClients(prev => prev.map(c => c.id === clientId ? { ...c, features: updated } : c));
-    await supabase.from("clients").update({ features: updated }).eq("id", clientId);
-    setSaving(null);
+  const togglePending = (clientId: string, key: keyof ClientFeatures, val: boolean) => {
+    setPending(prev => ({ ...prev, [clientId]: { ...prev[clientId], [key]: val } }));
+    setSavedRows(prev => ({ ...prev, [clientId]: false }));
+  };
+
+  const saveClient = async (clientId: string) => {
+    setSavingRow(clientId);
+    const features = pending[clientId];
+    const { error } = await supabase.from("clients").update({ features }).eq("id", clientId);
+    if (!error) {
+      setClients(prev => prev.map(c => c.id === clientId ? { ...c, features } : c));
+      setSavedRows(prev => ({ ...prev, [clientId]: true }));
+    }
+    setSavingRow(null);
+  };
+
+  const isDirty = (clientId: string) => {
+    const orig = clients.find(c => c.id === clientId)?.features;
+    const curr = pending[clientId];
+    if (!orig || !curr) return false;
+    return (Object.keys(curr) as (keyof ClientFeatures)[]).some(k => curr[k] !== orig[k]);
   };
 
   if (loading) {
@@ -138,7 +159,7 @@ export default function ConfigSection() {
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <p className="text-sm font-bold text-gray-900">Acceso por cliente</p>
-          <p className="text-xs text-gray-400 mt-0.5">Activa o desactiva secciones para cada cuenta.</p>
+          <p className="text-xs text-gray-400 mt-0.5">Activa o desactiva secciones para cada cuenta. Guarda los cambios con el botón.</p>
         </div>
 
         <table className="w-full">
@@ -150,6 +171,7 @@ export default function ConfigSection() {
                   {f.label}
                 </th>
               ))}
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -161,15 +183,26 @@ export default function ConfigSection() {
                 {FEATURE_LABELS.map(f => (
                   <td key={f.key} className="px-4 py-3.5 text-center">
                     <div className="flex justify-center">
-                      <div className={saving === client.id + f.key ? "opacity-50 pointer-events-none" : ""}>
-                        <Toggle
-                          checked={client.features[f.key]}
-                          onChange={val => toggleFeature(client.id, f.key, val)}
-                        />
-                      </div>
+                      <Toggle
+                        checked={pending[client.id]?.[f.key] ?? client.features[f.key]}
+                        onChange={val => togglePending(client.id, f.key, val)}
+                      />
                     </div>
                   </td>
                 ))}
+                <td className="px-4 py-3.5 text-right">
+                  {savedRows[client.id] && !isDirty(client.id) ? (
+                    <span className="text-xs text-green-500 font-medium">Guardado ✓</span>
+                  ) : (
+                    <button
+                      onClick={() => saveClient(client.id)}
+                      disabled={savingRow === client.id || !isDirty(client.id)}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#FF7200] text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#e56600] transition-colors"
+                    >
+                      {savingRow === client.id ? "..." : "Guardar"}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
