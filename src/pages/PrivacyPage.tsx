@@ -65,7 +65,7 @@ export default function PrivacyPage() {
             <h2 className="text-base font-bold text-gray-900 mb-2">6. Eliminación de datos</h2>
             <p>Para solicitar la eliminación de tus datos o revocar el acceso de nuestra aplicación a tu cuenta de Instagram, puedes:</p>
             <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>Escribirnos a <a href="mailto:antonio.vini1704@gmail.com" className="text-[#FF7200] font-medium">antonio.vini1704@gmail.com</a></li>
+              <li>Escribirnos a <a href="mailto:wishup@gmail.com" className="text-[#FF7200] font-medium">wishup@gmail.com</a></li>
               <li>Revocar el acceso directamente desde <a href="https://www.facebook.com/settings?tab=business_tools" className="text-[#FF7200] font-medium" target="_blank" rel="noreferrer">Configuración de Facebook → Integraciones empresariales</a></li>
             </ul>
           </section>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-base font-bold text-gray-900 mb-2">7. Contacto</h2>
             <p>Si tienes preguntas sobre esta política de privacidad, contáctanos en:</p>
-            <p className="mt-1 font-medium text-gray-800">antonio.vini1704@gmail.com</p>
+            <p className="mt-1 font-medium text-gray-800">wishup@gmail.com</p>
           </section>
 
         </div>
