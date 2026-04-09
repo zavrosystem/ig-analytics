@@ -63,7 +63,6 @@ function MaintenancePage({ msg }: { msg: string }) {
 }
 
 const PERIOD_OPTIONS = [
-  { label: "4 días",  value: "4"  },
   { label: "7 días",  value: "7"  },
   { label: "14 días", value: "14" },
   { label: "30 días", value: "30" },
